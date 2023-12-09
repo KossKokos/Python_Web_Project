@@ -22,8 +22,6 @@ Base = declarative_base()
 #     refresh_token = Column(String(255), nullable=True)
 #     confirmed = Column(Boolean, default=False)
 
-from sqlalchemy import CheckConstraint
-
 class User(Base):
     __tablename__ = "users"
 

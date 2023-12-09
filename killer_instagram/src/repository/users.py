@@ -106,4 +106,17 @@ async def update_avatar(email, url: str, db: Session) -> User:
     user.avatar = url
     db.commit()
     return user
+
+async def get_user_by_id(user_id: int, db: Session) -> User | None:
+    """
+    The get_user_by_email function takes in an email and a database session,
+
+    """
+    # contact = (
+    #     db.query(Contact).filter_by(id=contact_id, user_id=current_user.id).first()
+    # )
+    return db.query(User).filter_by(id=user_id).first()
+
+async def change_user_role():
+    pass
     

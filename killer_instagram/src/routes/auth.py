@@ -9,8 +9,10 @@ from src.database.db import get_db
 from src.repository import users as repository_users
 from src.schemas import users as schema_users, token as schema_token
 from src.services.email import send_email, send_reset_password_email
+from src.services.auth import service_auth
 from src.schemas.email import RequestEmail
-from src.schemas.users import ChangePassword
+from src.schemas.users import ChangePassword, UserRoleUpdate, UserResponce
+from src.database.models import User
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 security = HTTPBearer()
@@ -172,4 +174,31 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
     body.new_password = service_auth.get_password_hash(body.new_password)
     await repository_users.change_password(user, body.new_password, db)
     return "User's password was changed succesfully"
-    
+
+@router.patch('/change_role/{user_id}', response_model=UserResponce)
+async def change_user_role(
+    user_id: int,
+    body: UserRoleUpdate,
+    #current_user: User = Depends(get_current_user),
+    current_user: User = Depends(service_auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Check if current user has admin role
+    if current_user.roles != "admin":
+        raise HTTPException(status_code=403, detail="Permission denied. Only admin can change roles.")
+
+    # Fetch user by ID from the database
+    #user = repository_users.get_user_by_id(db, user_id)
+    user = await repository_users.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update user role if the new role is valid
+
+    if body.roles in ['admin', 'moderator', 'user']:
+        user.roles = body.roles
+        db.commit()
+        db.refresh(user)
+        return user
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role provided")
