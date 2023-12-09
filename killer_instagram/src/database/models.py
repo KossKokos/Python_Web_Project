@@ -16,3 +16,12 @@ class User(Base):
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
+
+
+class Photo(Base):
+    __tablename__ = 'photos'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(100))
+    url = Column(String(200))
+    uploaded_at = Column(DateTime, default=func.now())

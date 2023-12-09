@@ -10,6 +10,43 @@ from src.services.auth import service_auth
 from src.conf.config import settings
 from src.schemas.users import UserResponce
 
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from database import session
+from repository import user
+from database.models import User as UserModel
+
+
+new_router = APIRouter(prefix="/api/users", tags=["Users"])
+
+
+@new_router.post("/", response_model=UserModel)
+def create_user(username: str, email: str, password: str, db: Session = Depends(session.get_db)):
+    db_user = user.create_user(db=db, username=username, email=email, password=password)
+    return db_user
+
+@new_router.get("/{user_id}", response_model=UserModel)
+def read_user(user_id: int, db: Session = Depends(session.get_db)):
+    db_user = user.get_user(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+@new_router.put("/{user_id}", response_model=UserModel)
+def update_user(user_id: int, username: str = None, email: str = None, password: str = None, db: Session = Depends(session.get_db)):
+    db_user = user.update_user(db=db, user_id=user_id, username=username, email=email, password=password)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+@new_router.delete("/{user_id}", response_model=UserModel)
+def delete_user(user_id: int, db: Session = Depends(session.get_db)):
+    db_user = user.delete_user(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+
 router = APIRouter(prefix='/users', tags=['users'])
 
 

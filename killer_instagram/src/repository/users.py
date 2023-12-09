@@ -3,6 +3,47 @@ from sqlalchemy.orm import Session
 from src.database.models import User
 from src.schemas.users import UserModel
 
+from sqlalchemy.orm import Session
+from database.models import User
+
+
+def create_user(db: Session, username: str, email: str, password: str, avatar: str = None, refresh_token: str = None, confirmed: bool = False):
+    user = User(username=username, email=email, password=password, avatar=avatar, refresh_token=refresh_token, confirmed=confirmed)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_user(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()
+
+def update_user(db: Session, user_id: int, username: str = None, email: str = None, password: str = None, avatar: str = None, refresh_token: str = None, confirmed: bool = None):
+    user = get_user(db, user_id)
+    if user:
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = password
+        if avatar:
+            user.avatar = avatar
+        if refresh_token:
+            user.refresh_token = refresh_token
+        if confirmed is not None:
+            user.confirmed = confirmed
+        db.commit()
+        db.refresh(user)
+    return user
+
+def delete_user(db: Session, user_id: int):
+    user = get_user(db, user_id)
+    if user:
+        db.delete(user)
+        db.commit()
+    return user
+
+
 
 async def create_user(body: UserModel, db: Session) -> User:
     """
