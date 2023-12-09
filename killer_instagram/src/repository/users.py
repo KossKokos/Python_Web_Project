@@ -14,8 +14,13 @@ async def create_user(body: UserModel, db: Session) -> User:
     :return: A user object
     """
     user = User(**body.dict())
+
     db.add(user)
     db.commit()
+    print(user)
+    if user.id == 1:
+        user.roles = "admin"
+        db.commit()
     db.refresh(user)
     return user
 
