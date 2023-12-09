@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi_limiter import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.routes import auth, users
+from src.routes import auth, users, pictures
 from src.middlewares.middlewares import (
     startup_event, 
     ban_ips_middleware, 
@@ -18,6 +18,7 @@ app = FastAPI()
 # # create route so i don't need to add contacts/... everytime to my routes functions
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
+app.include_router(pictures.router, prefix='/api')
 
 # app.add_event_handler("startup", startup_event)
 
