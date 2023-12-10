@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 
 
@@ -12,7 +13,8 @@ class UserResponce(BaseModel):
     username: str = 'username'
     email: EmailStr = 'example@gmail.com'
     password: str = 'password'
-    avatar: str = 'avatar_url'
+    avatar: Optional[str] = None
+    role: str = "role"
 
     class Config:
         orm_mode = True
@@ -20,3 +22,7 @@ class UserResponce(BaseModel):
 
 class ChangePassword(BaseModel):
     new_password: str = Field(min_length=8, max_length=15, default='new_password')
+
+
+class UserRoleUpdate(BaseModel):
+    role: str = "role"
