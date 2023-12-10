@@ -4,9 +4,6 @@ from sqlalchemy.orm import sessionmaker
 
 from src.conf.config import settings
 
-"""
-Тут не потрібно міняти
-"""
 
 SQLALCHEMY_DATABASE_URL = settings.sqlalchemy_database_url
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

@@ -8,9 +8,6 @@ import redis.asyncio as redis
 
 from src.conf.config import settings
 
-"""
-Тут просто приклади, можете їх міняти як заманеться
-"""
 
 allowed_ips = []
 banned_ips = []
