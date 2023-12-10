@@ -22,3 +22,4 @@ killer_instagram/alembic.ini
 killer_instagram/postgres-data
 killer_instagram/migrations
 .python-version
+killer_instagram/poetry.lock
