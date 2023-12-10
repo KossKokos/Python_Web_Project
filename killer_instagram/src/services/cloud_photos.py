@@ -29,7 +29,15 @@ class CloudImage:
 
     @staticmethod
     def upload(file, public_id: str):
-        cloud = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
+        cloud = cloudinary.uploader.upload(
+            file,
+            public_id=public_id,
+            overwrite=True,
+            transformation=[
+                {"width": 250, "height": 250, "crop": "fill"},
+                #  інші трансформації, які потрібні
+            ]
+        )
         return cloud
 
     @staticmethod
