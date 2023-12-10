@@ -45,3 +45,31 @@ class CloudImage:
         src_url = cloudinary.CloudinaryImage(public_id) \
             .build_url(width=250, height=250, crop='fill', version=cloud.get('version'))
         return src_url
+    @staticmethod
+    def get_transformed_url(original_url: str):
+        # Тут можна додати будь-які трансформації URL зображення
+        transformed_url = f"{original_url}?width=250&height=250&crop=fill"
+        return transformed_url
+
+    @staticmethod
+    def download(url: str):
+        # Тут представлено лише заглушка
+        image_content = b"fake_image_content"
+        return BytesIO(image_content)
+
+def generate_qr_code(data: str):
+    # Генерація QR-коду з вказаними даними
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Конвертація зображення QR-коду в байти
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue()
