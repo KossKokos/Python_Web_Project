@@ -25,4 +25,4 @@ class ChangePassword(BaseModel):
     new_password: str = Field(min_length=8, max_length=15, default='new_password')
 
 class UserRoleUpdate(BaseModel):
-    roles: str = "role"
+    role: str = "role"

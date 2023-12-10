@@ -33,11 +33,11 @@ class User(Base):
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
-    roles = Column(String(20), nullable=False, default='user')
+    role = Column(String(20), nullable=False, default='user')
 
     __table_args__ = (
         CheckConstraint(
-            roles.in_(['admin', 'moderator', 'user']),
+            role.in_(['admin', 'moderator', 'user']),
             name='check_valid_role'
         ),
     )
