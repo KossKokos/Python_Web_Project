@@ -132,7 +132,7 @@ async def change_user_role(user: User, body: UserRoleUpdate, db: Session) -> Use
     :param user: User: Get the user object from the database
     :param body: UserRoleUpdate: Get the role from the request body
     :param db: Session: Access the database
-    :return: A user object
+    :return: A user object with updated role
     :doc-author: Trelent
     """
     user.role = body.role
