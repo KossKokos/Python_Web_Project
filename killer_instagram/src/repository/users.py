@@ -36,7 +36,7 @@ async def get_user_by_email(email: str, db: Session) -> User | None:
     return db.query(User).filter(User.email==email).first()
 
 
-async def update_token(user: User, refresh_token, db: Session) -> None:
+async def update_token(user: User, refresh_token: str, db: Session) -> None:
     """
     The update_token function updates the refresh_token for a user in the database.
         Args:
@@ -118,7 +118,7 @@ async def get_user_by_id(user_id: int, db: Session) -> User | None:
     :return: A user object or none
     :doc-author: Trelent
     """
-    return db.query(User).filter_by(id=user_id).first()
+    return db.query(User).filter(User.id==user_id).first()
 
 
 async def change_user_role(user: User, body: UserRoleUpdate, db: Session) -> User:
