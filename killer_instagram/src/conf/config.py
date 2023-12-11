@@ -2,7 +2,7 @@ from pydantic import BaseSettings, EmailStr
 
 
 class Settings(BaseSettings):
-    sqlalchemy_database_url: str = "postgresql+psycopg2://postgres:password@host:port/db_name"
+    sqlalchemy_database_url: str = 'postgresql+psycopg2://postgres:password@host:port/db_name'
     secret_key: str = 'secret_key'
     algorithm: str = 'algorith'
     mail_username: str = 'example@com.com'
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     cloudinary_api_secret: str = 'cloudinary_secret'
     redis_name: str = 'redis'
     redis_host: str = 'localhost'
-    redis_port: int = 1111
+    redis_port: int = 6379
     redis_db: int = 0
 
     class Config:
