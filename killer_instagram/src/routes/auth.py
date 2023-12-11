@@ -194,10 +194,15 @@ async def change_user_role(
     """
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Permission denied. Only admin can change roles.")
-
     user = await repository_users.get_user_by_id(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if current_user.id == user_id:
+        raise HTTPException(status_code=403, detail="Permission denied. Own role cannot be changed.")
+    if user.id == 1:
+        raise HTTPException(status_code=403, detail="Permission denied.Superadmin role cannot be changed.")
+    if user.role == "admin" and current_user.id != 1:
+        raise HTTPException(status_code=403, detail="Permission denied.Admin role can be changed only by Superadmin (id=1).")
 
     if body.role in ['admin', 'moderator', 'user']:
         await repository_users.change_user_role(user, body, db)
