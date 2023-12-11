@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from src.database.models import User
-from src.schemas.users import UserModel
+from src.schemas.users import UserModel, UserRoleUpdate
 
 
 async def create_user(body: UserModel, db: Session) -> User:
@@ -16,6 +16,9 @@ async def create_user(body: UserModel, db: Session) -> User:
     user = User(**body.dict())
     db.add(user)
     db.commit()
+    if user.id == 1:
+        user.role = "admin"
+        db.commit()
     db.refresh(user)
     return user
 
@@ -101,4 +104,40 @@ async def update_avatar(email, url: str, db: Session) -> User:
     user.avatar = url
     db.commit()
     return user
+
+
+async def get_user_by_id(user_id: int, db: Session) -> User | None:
+    """
+    The get_user_by_id function returns a User object from the database, given an id.
+        Args:
+            user_id (int): The id of the user to be retrieved.
+            db (Session): A Session instance for interacting with the database.
+    
+    :param user_id: int: Specify the type of parameter that is expected to be passed in
+    :param db: Session: Pass the database session to the function
+    :return: A user object or none
+    :doc-author: Trelent
+    """
+    return db.query(User).filter_by(id=user_id).first()
+
+
+async def change_user_role(user: User, body: UserRoleUpdate, db: Session) -> User:
+    """
+    The change_user_role function changes the role of a user.
+        Args:
+            user (User): The User object to change the role of.
+            body (UserRoleUpdate): A UserRoleUpdate object containing the new role for this user.
+            db (Session): The database session to use when changing this users' role in our database.
+    
+    :param user: User: Get the user object from the database
+    :param body: UserRoleUpdate: Get the role from the request body
+    :param db: Session: Access the database
+    :return: A user object with updated role
+    :doc-author: Trelent
+    """
+    user.role = body.role
+    db.commit()
+    db.refresh(user)
+    return user
+    
     
