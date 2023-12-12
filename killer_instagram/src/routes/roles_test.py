@@ -16,7 +16,7 @@ from src.services.auth import service_auth
 from src.database.models import User
 from src.services.roles import RoleRights
 
-router = APIRouter(prefix='/roles_test', tags=['proles_test'])
+router = APIRouter(prefix='/roles_test', tags=['roles_test'])
 security = HTTPBearer()
 
 allowd_operation_get = RoleRights(["user", "moderator"])
@@ -27,7 +27,7 @@ allowd_operation_get = RoleRights(["user", "moderator"])
 
 #test
 @router.get("/", status_code=status.HTTP_200_OK,
-                dependencies=[Depends(allowd_operation_get)],
+                dependencies=[Depends(allowd_operation_update)],
                 description = "Only moderators and admin")
 async def read_root(current_user: User = Depends(service_auth.get_current_user)):
 
