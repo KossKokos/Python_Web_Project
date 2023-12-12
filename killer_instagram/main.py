@@ -1,17 +1,9 @@
-import redis.asyncio as redis
 import uvicorn
-
 from fastapi import FastAPI
-from fastapi_limiter import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routes import auth, users
-from src.middlewares.middlewares import (
-    startup_event, 
-    ban_ips_middleware, 
-    limit_access_by_ip,
-    user_agent_ban_middleware
-)
+from src.middlewares.middlewares import startup_event, ban_ips_middleware, limit_access_by_ip, user_agent_ban_middleware
 
 app = FastAPI()
 

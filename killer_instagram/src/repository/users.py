@@ -1,7 +1,41 @@
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.database.models import User
 from src.schemas.users import UserModel, UserRoleUpdate
+
+from fastapi import APIRouter, HTTPException, Depends
+
+from pydantic import BaseModel
+from typing import Optional
+
+
+router = APIRouter()
+
+class UserUpdate(BaseModel):
+    username: Optional[str]
+    email: Optional[str]
+    password: Optional[str]
+    avatar: Optional[str]
+
+@router.put("/users/{user_id}", response_model=UserModel)
+async def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if body.username:
+        user.username = body.username
+    if body.email:
+        user.email = body.email
+    if body.password:
+        user.password = body.password
+    if body.avatar:
+        user.avatar = body.avatar
+    
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 async def create_user(body: UserModel, db: Session) -> User:
@@ -139,5 +173,4 @@ async def change_user_role(user: User, body: UserRoleUpdate, db: Session) -> Use
     db.commit()
     db.refresh(user)
     return user
-    
     
