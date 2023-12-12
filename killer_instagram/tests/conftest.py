@@ -2,6 +2,7 @@
 import sys
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import MagicMock
 
 path_root = Path(__file__).parent.parent.parent
 sys.path.append(path_root)
@@ -61,6 +62,7 @@ def user():
         "password": "password"
     }
 
+
 @pytest.fixture(scope="module")
 def new_user():
     return {
@@ -68,6 +70,7 @@ def new_user():
         "email": "example_2@example.com", 
         "password": "password_2"
     }
+
 
 future_user = {
     "username": "username", 

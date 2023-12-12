@@ -165,6 +165,24 @@ class Auth:
         return token
     
 
+    def sync_create_email_token(self, data: dict): # for tests
+        """
+        The create_email_token function takes a dictionary of data and returns a JWT token.
+        The token is encoded with the SECRET_KEY and ALGORITHM defined in the class.
+        The iat (issued at) claim is set to datetime.utcnow() and exp (expiration time) 
+        is set to 7 days from now.
+        
+        :param self: Represent the instance of the class
+        :param data: dict: Pass the data that will be encoded in the token
+        :return: A token, which is a string
+        """
+        to_encode = data.copy()
+        expire = datetime.utcnow() + timedelta(days=7)
+        to_encode.update({"iat": datetime.utcnow(), "exp": expire})
+        token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return token
+
+
     async def decode_email_token(self, token: str):
         """
         The decode_email_token function takes a token as an argument and returns the email address associated with that token.
