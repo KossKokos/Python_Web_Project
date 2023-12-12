@@ -75,6 +75,10 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     token = credentials.credentials
     email = await service_auth.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, db)
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User with this token doesn't exist")
+    
     if user.refresh_token != token:
         user.refresh_token = None
         db.commit()
@@ -86,7 +90,7 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router.get('/confirmed_email/{token}')
+@router.get('/confirmed_email/{token}', status_code=status.HTTP_202_ACCEPTED)
 async def confirm_email(token: str, db: Session = Depends(get_db)):
     """
     The confirm_email function is used to confirm a user's email address.
