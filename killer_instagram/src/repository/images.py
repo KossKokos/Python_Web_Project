@@ -188,5 +188,9 @@ async def create_image(
         tag = await get_or_create_tag(db, tag_name="Test")
         await add_tag_to_image(db, image_id=image.id, tag_id=tag.id)
 
-    return ImageResponse.from_orm(image)
+    # return image
+    return ImageResponse.from_db_model(image)
 
+async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
+    created_image = db.query(Image).filter(Image.user_id==user_id, Image.id==image_id).first()
+    return created_image

@@ -27,17 +27,23 @@ class CloudImage:
     def generate_name_avatar(email: str):
         user_folder = email
         name = hashlib.sha256(email.encode('utf-8')).hexdigest()[:12]
-        return f"User_avatars/{user_folder}{name}"
+        return f"Users/{user_folder}/Avatar/{name}"
 
     @staticmethod
-    def generate_name_picture(email: str):
+    def generate_name_image(email: str, image_id: int):
         user_folder = email
         name = hashlib.sha256(email.encode('utf-8')).hexdigest()[:12]
-        return f"User_pictures/{user_folder}/{name}"
+        unique_name = f"{image_id}id" + name
+        return f"Users/{user_folder}/Pictures/{unique_name}"
 
     @staticmethod
-    def upload(file, public_id: str):
+    def upload_avatar(file, public_id: str):
         cloud = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
+        return cloud
+
+    @staticmethod
+    def upload_image(file, public_id: str):
+        cloud = cloudinary.uploader.upload(file, public_id=public_id, overwrite=False)
         return cloud
 
     @staticmethod

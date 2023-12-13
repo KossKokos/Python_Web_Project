@@ -9,6 +9,7 @@ from src.database.models import User
 from src.database.database import db_transaction
 from typing import List
 from src.services.cloudinary import upload_to_cloudinary
+from src.services.cloudinary import CloudImage
 
 router = APIRouter(prefix='/images', tags=['images'])
 
@@ -18,6 +19,7 @@ async def upload_image(
     description: str,
     tags: List[str] = Query(..., description="List of tags. Use existing tags or add new ones."),
     file: UploadFile = File(...),
+    current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
 
@@ -42,7 +44,7 @@ async def upload_image(
         file_extension = file.filename.split(".")[-1]
         image_path = f"images/{1}_{description}_original.{file_extension}"
         # TODO  current_user image_path
-        # image_path = f"images/{current_user.id}_{description}_original.{file_extension}"
+        image_path = f"images/{current_user.id}_{description}_original.{file_extension}"
 
         try:
             with open(image_path, "wb") as f:
@@ -55,19 +57,33 @@ async def upload_image(
                 detail=f"Error opening file: {str(e)}",
             )
         # Upload the original image to Cloudinary asynchronously
-        cloudinary_response = await upload_to_cloudinary(image_path)
+        # cloudinary_response = await upload_to_cloudinary(image_path)
 
         # Save image information to the database
+
         image = await repository_images.create_image(
             db=db,
             # TODO  current_user
-            # user_id=current_user.id,
-            user_id=1,
+            user_id=current_user.id,
+            # user_id=1,
             description=description,
-            image_url=cloudinary_response["secure_url"],
-            public_id=cloudinary_response["public_id"],
+            image_url="image_url",
+            public_id="public_id",
+            # image_url=cloudinary_response["secure_url"],
+            # public_id=cloudinary_response["public_id"],
             tags=tags,
         )
+
+        public_id = CloudImage.generate_name_image(email=current_user.email, image_id=image.id)
+        cloud = CloudImage.upload_image(file=image_path, public_id=public_id)
+        image_url = CloudImage.get_url(public_id=public_id, cloud=cloud)
+        
+        # TODO: це треба перенести в scr/repository/images.py
+        created_image = await repository_images.add_url_public_id(user_id=current_user.id, image_id=image.id, db=db)
+        created_image.image_url = image_url
+        created_image.public_id = public_id
+        db.commit()
+        db.refresh(created_image)
 
         # Add tags to the image
         if tags:
@@ -77,7 +93,7 @@ async def upload_image(
 
         return image
     except HTTPException as e:
-        raise
+        raise e
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -143,14 +159,14 @@ async def update_image_description(image_id: int, description: str, current_user
     Returns:
         ImageResponse: The updated image.
     """
-    image = repository_images.get_image_by_id(db=db, image_id=image_id)
+    image = await repository_images.get_image_by_id(db=db, image_id=image_id)
 
     # Check if the current user has permission to update the image
-    if image.user_id != current_user.id and not current_user.is_admin:
+    if image.user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
 
     # Update image description in the database
-    image = repository_images.update_image_description(db=db, image_id=image_id, description=description)
+    image = await repository_images.update_image_description(db=db, image_id=image_id, new_description=description)
 
     return image
 
