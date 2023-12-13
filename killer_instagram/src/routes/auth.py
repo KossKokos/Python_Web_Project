@@ -179,7 +179,8 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
     return {"detail": "User's password was changed succesfully"}
 
 
-@router.patch('/change_role/{user_id}', response_model=UserResponce)
+@router.patch('/change_role/{user_id}', response_model=UserResponce, 
+                                        status_code=status.HTTP_202_ACCEPTED)
 async def change_user_role(
     user_id: int,
     body: UserRoleUpdate,

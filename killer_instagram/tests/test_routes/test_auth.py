@@ -1,5 +1,4 @@
 import sys
-import asyncio
 from pathlib import Path
 # pytest tests/test_routes/test_auth.py -v
 path_root = Path(__file__).parent.parent
@@ -12,11 +11,81 @@ from jose import jwt
 from src.database.models import User
 from src.services.auth import service_auth
 from src.conf.config import settings
-from src.schemas.email import RequestEmail
-from src.repository.users import get_user_by_email
 
-pytest_plugins = ('pytest_asyncio',)
 
+"""Fixtures:"""
+
+@pytest.fixture(scope='function')
+def super_admin_login(client, user):
+    response = client.post(
+        "/api/auth/login",
+        data={"username": user["email"], "password": user["password"]},
+    )
+    data = response.json()
+    return data
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+@pytest.fixture(scope='function')
+def admin_login(client, user_id_2):
+    login_response = client.post(
+        "/api/auth/login",
+        data={"username": user_id_2["email"], "password": "new_password"},
+    )
+    data = login_response.json()
+    return data
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+@pytest.fixture(scope='function')
+def user_id_3_role_admin(client, user_id_3, session, monkeypatch):
+    mock_send_email = MagicMock()
+    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    signup_response = client.post(
+        "/api/auth/signup",
+        json=user_id_3,
+    )
+    user: User = session.query(User).filter(User.email==user_id_3["email"]).first()
+    user.role = "admin"
+    session.commit()
+    data = signup_response.json()
+    return data
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+@pytest.fixture(scope='function')
+def get_email_from_signup(client, user_id_2, monkeypatch) -> str:
+    mock_send_email = MagicMock()
+    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    response = client.post(
+        "/api/auth/signup",
+        json=user_id_2,
+    )
+    data: dict = response.json()
+    user: dict = data["user"]
+    email: str = user["email"]
+    return email
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+@pytest.fixture(scope="function")
+def get_email_token(user_id_2) -> str:
+    data: dict = {"sub": user_id_2["email"]}
+    email_token = service_auth.sync_create_email_token(data=data)
+    return email_token
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+@pytest.fixture(scope="function")
+def no_user_email_token():
+    wrong_email = "wrong_email@example.com"
+    email_token = service_auth.sync_create_email_token({"sub": wrong_email})
+    return email_token
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+"""Tests:"""
 
 def test_create_user(client, user, monkeypatch):
     mock_send_email = MagicMock()
@@ -92,19 +161,8 @@ def test_login_wrong_email(client, user):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-@pytest.fixture(scope='function')
-def login(client, user):
-    response = client.post(
-        "/api/auth/login",
-        data={"username": user['email'], "password": user['password']},
-    )
-    data = response.json()
-    return data
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------
-
-def test_refresh_token_200(client, login):
-    old_refresh_token = login['refresh_token']
+def test_refresh_token_200(client, super_admin_login):
+    old_refresh_token = super_admin_login['refresh_token']
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         response = client.get(
@@ -131,8 +189,8 @@ def test_refresh_token_not_token(client):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_refresh_token_access_token(client, login):
-    old_refresh_token = login["access_token"]
+def test_refresh_token_access_token(client, super_admin_login):
+    old_refresh_token = super_admin_login["access_token"]
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         response = client.get(
@@ -145,8 +203,8 @@ def test_refresh_token_access_token(client, login):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_refresh_token_access_token(client, login):
-    old_refresh_token = login["refresh_token"]
+def test_refresh_token_access_token(client, super_admin_login):
+    old_refresh_token = super_admin_login["refresh_token"]
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         payload = jwt.decode(old_refresh_token, settings.secret_key, algorithms=[settings.algorithm])
@@ -159,21 +217,6 @@ def test_refresh_token_access_token(client, login):
         assert response.status_code == 401, response.text
         data = response.json()
         assert data["detail"] == "User with this token doesn't exist"
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------
-
-@pytest.fixture(scope='function')
-def get_email_from_signup(client, new_user, monkeypatch) -> str:
-    mock_send_email = MagicMock()
-    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
-    response = client.post(
-        "/api/auth/signup",
-        json=new_user,
-    )
-    data: dict = response.json()
-    user: dict = data["user"]
-    email: str = user["email"]
-    return email
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -193,14 +236,6 @@ def test_request_email_ok(client, get_email_from_signup, monkeypatch):
     
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-@pytest.fixture(scope="function")
-def get_email_token(new_user) -> str:
-    data: dict = {"sub": new_user["email"]}
-    email_token = service_auth.sync_create_email_token(data=data)
-    return email_token
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------
-
 def test_confirmed_email_ok(client, get_email_token):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
@@ -213,12 +248,12 @@ def test_confirmed_email_ok(client, get_email_token):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_request_email_again(client, new_user, monkeypatch):
+def test_request_email_again(client, user_id_2, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
         monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
-        body: dict = {"email": new_user["email"]}
+        body: dict = {"email": user_id_2["email"]}
         response = client.post(
             "api/auth/request_email",
             json=body
@@ -240,13 +275,6 @@ def test_confirmed_email_wrong_token(client):
         assert data["detail"] == "Invalid token for email"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
-@pytest.fixture(scope="function")
-def no_user_email_token():
-    wrong_email = "wrong_email@example.com"
-    email_token = service_auth.sync_create_email_token({"sub": wrong_email})
-    return email_token
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_confirmed_email_no_user(client, no_user_email_token):
     with patch.object(service_auth, 'r_cashe') as r_mock:
@@ -260,12 +288,12 @@ def test_confirmed_email_no_user(client, no_user_email_token):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_request_reset_password_email(client, new_user, monkeypatch):
+def test_request_reset_password_email(client, user_id_2, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
         monkeypatch.setattr("src.routes.auth.send_reset_password_email", mock_send_email)
-        body: dict = {"email": new_user["email"]}
+        body: dict = {"email": user_id_2["email"]}
         response = client.post(
             "api/auth/reset_password",
             json=body
@@ -301,3 +329,87 @@ def test_reset_password(client, get_email_token):
         assert response.status_code == 202, response.text
         data: dict = response.json()
         assert data["detail"] == "User's password was changed succesfully"
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_change_role_not_admin(client, admin_login):
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        token: str = admin_login["access_token"]
+        body: dict = {"role": "moderator"}
+        response = client.patch(
+            f"api/auth/change_role/{1}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"}
+        )    
+        assert response.status_code == 403, response.text
+        data: dict = response.json()
+        assert data["detail"] == "Permission denied. Only admin can change roles."
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_change_role_no_user(client, super_admin_login):
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        token: str = super_admin_login["access_token"]
+        body: dict = {"role": "admin"}
+        response = client.patch(
+            f"api/auth/change_role/{10}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"}
+        )    
+        assert response.status_code == 404, response.text
+        data: dict = response.json()
+        assert data["detail"] == "User not found"
+        
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_change_role_own_role(client, super_admin_login):
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        token: str = super_admin_login["access_token"]
+        body: dict = {"role": "moderator"}
+        response = client.patch(
+            f"api/auth/change_role/{1}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"}
+        )    
+        assert response.status_code == 403, response.text
+        data: dict = response.json()
+        assert data["detail"] == "Permission denied. Own role cannot be changed."
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_change_role_ok(client, super_admin_login, user_id_2, session):
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        token: str = super_admin_login["access_token"]
+        body: dict = {"role": "admin"}
+        response = client.patch(
+            f"api/auth/change_role/{2}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"}
+        )   
+        current_user: User = session.query(User).filter(User.email==user_id_2.get('email')).first()
+        current_user.role = body["role"]
+        session.commit() 
+        assert response.status_code == 202, response.text
+        data: dict = response.json()
+        assert data["username"] == user_id_2["username"]
+        assert data["role"] == body["role"]
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_change_role_not_superadmin(client, admin_login, user_id_3_role_admin):
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        token: str = admin_login["access_token"]
+        body: dict = {"role": "moderator"}
+        response = client.patch(
+            f"api/auth/change_role/{3}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"}
+        )    
+        assert response.status_code == 403, response.text
+        data: dict = response.json()
+        assert data["detail"] == "Permission denied.Admin role can be changed only by Superadmin (id=1)."

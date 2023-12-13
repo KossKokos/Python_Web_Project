@@ -64,22 +64,17 @@ def user():
 
 
 @pytest.fixture(scope="module")
-def new_user():
+def user_id_2():
     return {
         "username": "username_2", 
         "email": "example_2@example.com", 
         "password": "password_2"
     }
 
-
-future_user = {
-    "username": "username", 
-    "email": "example@example.com", 
-    "password": "password",
-    "created_at": datetime.now(),
-    "pictures": [],
-    "avatar": None,
-    "refresh_token": None,
-    "confirmed": False,
-    "role": "admin"
-}
+@pytest.fixture(scope="module")
+def user_id_3():
+    return {
+        "username": "username_3", 
+        "email": "example_3@example.com", 
+        "password": "password_3"
+    }
