@@ -2,6 +2,8 @@ import hashlib
 
 import cloudinary
 import cloudinary.uploader
+from cloudinary.uploader import upload
+from cloudinary.utils import cloudinary_url
 
 from src.conf.config import settings
 from src.database.models import User
@@ -43,3 +45,14 @@ class CloudImage:
         src_url = cloudinary.CloudinaryImage(public_id) \
             .build_url(width=250, height=250, crop='fill', version=cloud.get('version'))
         return src_url
+    
+
+async def upload_to_cloudinary(image_path: str):
+    try:
+        cloudinary_response = upload(image_path)
+        image_url, options = cloudinary_url(cloudinary_response['public_id'], format=cloudinary_response['format'])
+        cloudinary_response['image_url'] = image_url
+        return cloudinary_response
+    except Exception as e:
+        print(f"Error uploading to Cloudinary: {e}")
+        return None
