@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-# pytest tests/test_routes/test_auth.py -v
+
 path_root = Path(__file__).parent.parent
 sys.path.append(str(path_root))
 
@@ -11,6 +11,10 @@ from jose import jwt
 from src.database.models import User
 from src.services.auth import service_auth
 from src.conf.config import settings
+
+
+"""To start the test, enter : pytest tests/test_routes/test_auth.py -v 
+You must be in the killer_instagram directory in the console"""
 
 
 """Fixtures:"""
@@ -405,11 +409,29 @@ def test_change_role_not_superadmin(client, admin_login, user_id_3_role_admin):
         r_mock.get.return_value = None
         token: str = admin_login["access_token"]
         body: dict = {"role": "moderator"}
+        user_id: int = 3
         response = client.patch(
-            f"api/auth/change_role/{3}",
+            f"api/auth/change_role/{user_id}",
             json=body,
             headers={"Authorization": f"Bearer {token}"}
         )    
         assert response.status_code == 403, response.text
         data: dict = response.json()
         assert data["detail"] == "Permission denied.Admin role can be changed only by Superadmin (id=1)."
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_change_role_role_not_found(client, super_admin_login):
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        token: str = super_admin_login["access_token"]
+        body: dict = {"role": "wrong role"}
+        user_id: int = 2
+        response = client.patch(
+            f"api/auth/change_role/{user_id}",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"}
+        )    
+        assert response.status_code == 400, response.text
+        data: dict = response.json()
+        assert data["detail"] == "Invalid role provided"
