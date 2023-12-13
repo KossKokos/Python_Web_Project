@@ -75,6 +75,10 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     token = credentials.credentials
     email = await service_auth.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, db)
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User with this token doesn't exist")
+    
     if user.refresh_token != token:
         user.refresh_token = None
         db.commit()
@@ -86,7 +90,7 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(sec
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router.get('/confirmed_email/{token}')
+@router.get('/confirmed_email/{token}', status_code=status.HTTP_202_ACCEPTED)
 async def confirm_email(token: str, db: Session = Depends(get_db)):
     """
     The confirm_email function is used to confirm a user's email address.
@@ -104,9 +108,9 @@ async def confirm_email(token: str, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Verification error')
     if user.confirmed:
-        return {'message': 'Email is already confirmed'}
+        return {'detail': 'Email is already confirmed'}
     await repository_users.confirmed_email(email, db)
-    return {'message': 'Email is confirmed'}
+    return {'detail': 'Email is confirmed'}
 
 
 @router.post('/request_email', status_code=status.HTTP_202_ACCEPTED)
@@ -126,10 +130,10 @@ async def request_email(body: RequestEmail, background_task: BackgroundTasks,
     """
     user = await repository_users.get_user_by_email(body.email, db)
     if user is not None and user.confirmed:
-        return {'message': 'Email is already confirmed'}
+        return {'detail': 'Email is already confirmed'}
     if user:
         background_task.add_task(send_email, user.email, user.username, request.base_url)
-    return {'message': 'Check your email for further information'}
+    return {'detail': 'Check your email for further information'}
 
 
 @router.post('/reset_password', status_code=status.HTTP_202_ACCEPTED)
@@ -149,10 +153,10 @@ async def reset_password_request(body: RequestEmail, background_task: Background
     user = await repository_users.get_user_by_email(body.email, db)
     if user:
         background_task.add_task(send_reset_password_email, user.email, user.username, request.base_url)
-    return {'message': 'Check your email for further information'}
+    return {'detail': 'Check your email for further information'}
 
 
-@router.patch('/change_password/{token}')
+@router.patch('/change_password/{token}', status_code=status.HTTP_202_ACCEPTED)
 async def reset_password(body: ChangePassword, token: str, db: Session = Depends(get_db)):
     """
     The reset_password function is used to reset a user's password.
@@ -169,13 +173,14 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
     email = await service_auth.decode_email_token(token)
     user = await repository_users.get_user_by_email(email, db)
     if user is None:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Verification error')
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Verification error')
     body.new_password = service_auth.get_password_hash(body.new_password)
     await repository_users.change_password(user, body.new_password, db)
-    return "User's password was changed succesfully"
+    return {"detail": "User's password was changed succesfully"}
 
 
-@router.patch('/change_role/{user_id}', response_model=UserResponce)
+@router.patch('/change_role/{user_id}', response_model=UserResponce, 
+                                        status_code=status.HTTP_202_ACCEPTED)
 async def change_user_role(
     user_id: int,
     body: UserRoleUpdate,
