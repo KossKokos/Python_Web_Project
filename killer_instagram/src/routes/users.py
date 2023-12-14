@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 import cloudinary
 import cloudinary.uploader
@@ -6,11 +6,39 @@ import cloudinary.uploader
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
-from src.services.auth import service_auth
+from src.services.auth import service_auth, get_current_user
 from src.conf.config import settings
-from src.schemas.users import UserResponce
+from src.schemas.users import UserResponce, UserModel, UserUpdate
+
 
 router = APIRouter(prefix='/users', tags=['users'])
+
+@router.put("/users/{user_id}", response_model=UserModel)
+async def update_user(
+    user_id: int,
+    body: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.id != current_user.id:
+        raise HTTPException(status_code=403, detail="You don't have permission to update this user")  
+
+    if body.username:
+        user.username = body.username
+    if body.email:
+        user.email = body.email
+    if body.password:
+        user.password = body.password
+    if body.avatar:
+        user.avatar = body.avatar
+
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.get('/me', response_model=UserResponce)
