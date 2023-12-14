@@ -27,7 +27,7 @@ allowd_operation_get = RoleRights(["user", "moderator"])
 
 #test
 @router.get("/", status_code=status.HTTP_200_OK,
-                dependencies=[Depends(allowd_operation_update)],
+                dependencies=[Depends(allowd_operation_get)],
                 description = "Only moderators and admin")
 async def read_root(current_user: User = Depends(service_auth.get_current_user)):
 

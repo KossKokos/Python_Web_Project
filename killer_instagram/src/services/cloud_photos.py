@@ -22,7 +22,7 @@ class CloudImage:
     )
 
     @staticmethod
-    def generate_name_avatar(email: str):
+    def generate_name_avatar(email: str) -> str:
         user_folder = email
         name = hashlib.sha256(email.encode('utf-8')).hexdigest()[:12]
         return f"User_avatars/{user_folder}{name}"

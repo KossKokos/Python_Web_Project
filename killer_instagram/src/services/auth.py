@@ -63,6 +63,25 @@ class Auth:
         to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "access_token"})
         encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_access_token
+    
+    def sync_create_access_token(self, data: dict, expires_delta: Optional[float] = None):
+        """
+        The create_access_token function creates a new access token for the user.
+            
+        
+        :param self: Represent the instance of the class
+        :param data: dict: Pass the data that will be encoded into the access token
+        :param expires_delta: Optional[float]: Set the expiration time of the access token
+        :return: A token in bytes
+        """
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=60)
+        to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "access_token"})
+        encoded_access_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return encoded_access_token
 
     async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
         """
