@@ -10,12 +10,16 @@ from src.repository import users as repository_users
 from src.repository.logout import token_to_blacklist
 from src.schemas import users as schema_users, token as schema_token
 from src.services.email import send_email, send_reset_password_email
+from src.services.roles import RoleRights
+from src.services.logout import logout_dependency
 from src.schemas.email import RequestEmail
 from src.schemas.users import ChangePassword, UserRoleUpdate, UserResponce
 from src.database.models import User
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 security = HTTPBearer()
+
+allowd_operation_change_role= RoleRights(["admin"])
 
 
 @router.post('/signup', status_code=status.HTTP_201_CREATED)
@@ -181,7 +185,10 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
 
 
 @router.patch('/change_role/{user_id}', response_model=UserResponce, 
-                                        status_code=status.HTTP_202_ACCEPTED)
+                                        status_code=status.HTTP_202_ACCEPTED,
+                                        dependencies=[Depends(allowd_operation_change_role), Depends(logout_dependency)],
+                                        description = "Only admins"
+                                        )
 async def change_user_role(
     user_id: int,
     body: UserRoleUpdate,
@@ -217,17 +224,22 @@ async def change_user_role(
         raise HTTPException(status_code=400, detail="Invalid role provided")
     
 
-@router.post('/logout')
+@router.get('/logout')
 async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db), 
                 current_user: User = Depends(service_auth.get_current_user)):
     """
-    Logout endpoint to blacklist the access token.
+    The logout function is used to logout a user.
+    It takes in the credentials of the user and returns a message that "Successfully logged out"
+
+
+    :param credentials: HTTPAuthorizationCredentials: Get the access token from the request header
+    :param db: Session: Get the database session
+    :param current_user: User: Get the user_id of the current user
+    :return: A dictionary
+    :doc-author: Trelent
     """
+
     access_token = credentials.credentials
-    print (222,credentials.credentials)
-    #user_email = current_user.email
-    print (225, access_token)
     user_id = current_user.id
     result =await token_to_blacklist(access_token, user_id, db)
-    print (232, result.blacklisted_token)
     return {"message": "Successfully logged out"}
