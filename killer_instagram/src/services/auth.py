@@ -179,7 +179,7 @@ class Auth:
         """
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(days=7)
-        to_encode.update({"iat": datetime.utcnow(), "exp": expire})
+        to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "email_token"})
         token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return token
     
@@ -197,12 +197,12 @@ class Auth:
         """
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(days=7)
-        to_encode.update({"iat": datetime.utcnow(), "exp": expire})
+        to_encode.update({"iat": datetime.utcnow(), "exp": expire, "scope": "email_token"})
         token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return token
 
 
-    async def decode_email_token(self, token: str):
+    async def decode_email_token(self, email_token: str):
         """
         The decode_email_token function takes a token as an argument and returns the email address associated with that token.
         If the token is invalid, it raises an HTTPException.
@@ -212,9 +212,11 @@ class Auth:
         :return: The email address of the user who requested to reset their password
         """
         try:    
-            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
-            email = payload['sub']
-            return email
+            payload = jwt.decode(email_token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            if payload['scope'] == 'email_token':
+                email = payload['sub']
+                return email
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid scope for email token')
         except JWTError as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='Invalid token for email')
 
