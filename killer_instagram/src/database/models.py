@@ -18,11 +18,14 @@ class User(Base):
     email = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
-    pictures = relationship('Picture', back_populates='user')
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
     role = Column(String(20), nullable=False, default='user')
+    pictures = relationship('Picture', back_populates='user')
+    #blacklisted_tokens = relationship('BlacklistedToken', back_populates='user')
+    blacklisted_token = relationship('BlacklistedToken', uselist=False, back_populates='user')
+    
 
     __table_args__ = (
         CheckConstraint(
@@ -65,3 +68,12 @@ class Tag(Base):
     tag = Column(String(30), nullable=False, unique=True)
     picture_id = Column('picture_id', ForeignKey('pictures_table.id', ondelete='CASCADE'))
     picture = relationship('Picture', back_populates='tags')
+
+
+class BlacklistedToken(Base):
+    __tablename__ = 'blacklisted_tokens'
+    
+    id = Column(Integer, primary_key=True)
+    blacklisted_token = Column(String(255), nullable=True)
+    user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'), unique=True)
+    user = relationship('User', back_populates='blacklisted_token')

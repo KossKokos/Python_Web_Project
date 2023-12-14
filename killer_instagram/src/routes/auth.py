@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.services.auth import service_auth
 from src.database.db import get_db
 from src.repository import users as repository_users
+from src.repository.logout import token_to_blacklist
 from src.schemas import users as schema_users, token as schema_token
 from src.services.email import send_email, send_reset_password_email
 from src.schemas.email import RequestEmail
@@ -215,3 +216,18 @@ async def change_user_role(
     else:
         raise HTTPException(status_code=400, detail="Invalid role provided")
     
+
+@router.post('/logout')
+async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db), 
+                current_user: User = Depends(service_auth.get_current_user)):
+    """
+    Logout endpoint to blacklist the access token.
+    """
+    access_token = credentials.credentials
+    print (222,credentials.credentials)
+    #user_email = current_user.email
+    print (225, access_token)
+    user_id = current_user.id
+    result =await token_to_blacklist(access_token, user_id, db)
+    print (232, result.blacklisted_token)
+    return {"message": "Successfully logged out"}

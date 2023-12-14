@@ -9,11 +9,18 @@ from src.repository import users as repository_users
 from src.services.auth import service_auth
 from src.conf.config import settings
 from src.schemas.users import UserResponce
+from src.services.roles import RoleRights
+from src.services.logout import logout_dependency
 
 router = APIRouter(prefix='/users', tags=['users'])
 
+allowd_operation_get = RoleRights(["user", "moderator", "admin"])
 
-@router.get('/me', response_model=UserResponce)
+
+@router.get('/me', response_model=UserResponce,
+            status_code=status.HTTP_200_OK,
+            dependencies=[Depends(allowd_operation_get), Depends(logout_dependency)],
+            description = "Any User")
 async def read_users_me(current_user: User = Depends(service_auth.get_current_user)):
     """
     The read_users_me function returns the current user's information.

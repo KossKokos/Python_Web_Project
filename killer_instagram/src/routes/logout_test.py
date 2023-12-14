@@ -1,7 +1,3 @@
-"""
-Тут будуть тільки шляхи: router = APIRouter(prefix='/pictures', tags=['pictures'])
-
-"""
 from typing import List
 
 from fastapi import (
@@ -17,19 +13,19 @@ from src.database.models import User
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
 
-router = APIRouter(prefix='/roles_test', tags=['roles_test'])
+router = APIRouter(prefix='/logout_test', tags=['logout_test'])
 security = HTTPBearer()
 
-allowd_operation_get = RoleRights(["user", "moderator"])
+allowd_operation_get = RoleRights(["user", "moderator", "admin"])
 # allowd_operation_create = RoleRights(["user","moderator", "admin"])
 # allowd_operation_update = RoleRights(["admin"])
 # allowd_operation_remove = RoleRights(["admin"])
 
-
 #test
+
 @router.get("/", status_code=status.HTTP_200_OK,
                 dependencies=[Depends(allowd_operation_get), Depends(logout_dependency)],
-                description = "Only moderators and admin")
+                description = "All users")
 async def read_root(current_user: User = Depends(service_auth.get_current_user)):
 
     """
