@@ -54,6 +54,7 @@ class Image(Base):
     comments = relationship('Comment', back_populates='image')
     image_url = Column(String)
     public_id = Column(String(255))
+    file_extension = Column(String, nullable=False)
 
     user = relationship("User", back_populates="images")
     tags = relationship("Tag", secondary="image_m2m_tag", back_populates="images")

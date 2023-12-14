@@ -19,6 +19,7 @@ class ImageStatusUpdate(BaseModel):
 class ImageResponse(BaseModel):
     id: int
     user_id: int
+    public_id: Optional[str]
     description: Optional[str]
     image_url: Optional[str]
 
