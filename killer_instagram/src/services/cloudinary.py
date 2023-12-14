@@ -92,17 +92,14 @@ class CloudImage:
 
     @staticmethod
     def improve_photo(image_url: str):
-        width = 100  # Задайте ширину та висоту за потреби
+        width = 100
         height = 150
         crop = "fill"
         
-        # Отримайте URL та параметри трансформації
         url, options = cloudinary_url(image_url, width=width, height=height, crop=crop)
         
-        # Виведіть URL для перевірки
         print(f"Transformed URL: {url}")
         
-        # Використовуйте функцію upload з отриманими параметрами
         return cloudinary.uploader.upload(url, **options)
 
 
