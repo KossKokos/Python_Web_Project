@@ -45,17 +45,9 @@ async def update_avatar_user(file: UploadFile = File(), current_user: User = Dep
     :param db: Session: Pass the database session to the repository layer
     :return: The updated user
 `    """
-    cloudinary.config(
-        cloud_name=settings.cloudinary_name,
-        api_key=settings.cloudinary_api_key,
-        api_secret=settings.cloudinary_api_secret,
-        secure=True
-    )
     public_id = CloudImage.generate_name_avatar(email=current_user.email)
     cloud = CloudImage.upload(file=file.file, public_id=public_id)
     url = CloudImage.get_url(public_id=public_id, cloud=cloud)
-    # r = cloudinary.uploader.upload(file.file, public_id=f'ContactsApp/{current_user.username}', overwrite=True)
-    # src_url = cloudinary.CloudinaryImage(f'ContactsApp/{current_user.username}')\
-    #                     .build_url(width=250, height=250, crop='fill', version=r.get('version'))
+
     user = await repository_users.update_avatar(current_user.email, url=url, db=db)
     return user

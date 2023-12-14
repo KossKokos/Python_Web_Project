@@ -1,21 +1,18 @@
 import sys
 from pathlib import Path
-import json
-# path_root = Path(__file__).parent.parent
-# sys.path.append(str(path_root))
+
+path_root = Path(__file__).parent.parent
+sys.path.append(str(path_root))
 
 import pytest
 from unittest.mock import MagicMock, patch
-from jose import jwt 
-from fastapi import File
 
 from src.database.models import User
 from src.services.auth import service_auth
-from src.conf.config import settings
 
 
 """To run tests, enter: pytest tests/test_routes/test_users.py -v
-in the killer_instagram directory in console"""
+in the killer_instagram directory in the console"""
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 """Fixtures:"""
@@ -45,7 +42,7 @@ def access_token(client, user, session, monkeypatch):
 @pytest.fixture(scope="function")
 def no_email_token():
     data = {"sub": "wrong_email"}
-    token = service_auth.sync_create_email_token(data=data)
+    token = service_auth.sync_create_access_token(data=data)
     return token
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -79,25 +76,42 @@ def test_read_users_me_no_user(client, no_email_token):
         
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_update_avatar_ok(client, access_token, monkeypatch):
-    mock_cloud_service = MagicMock()
-    mock_publick_id = mock_cloud_service.return_value = "publick_id"
-    mock_cloud = mock_cloud_service.re = "cloud"
-    mock_build_url = mock_cloud_service.re = "some url"
-    monkeypatch.setattr("src.routes.users.CloudImage.generate_name_avatar", mock_publick_id)
-    monkeypatch.setattr("src.routes.users.CloudImage.upload", mock_cloud)
-    monkeypatch.setattr("src.routes.users.CloudImage.get_url", mock_build_url)
-    # file = open("tests/python_logo.jpg", "r")
-    mock_image = MagicMock(file=File())
-    mock_image.file = "python_logo.jpg"
-    file_path = r"C:\Users\kosko\Documents\Python\Python_Web\Final_project\Killer_instagram\killer_instagram\tests\test_routes\python_logo.jpg"
+def test_update_avatar_no_user(client, no_email_token, monkeypatch):
+    mock_cloud_service = MagicMock(return_value="image_url")
+    monkeypatch.setattr("src.routes.users.CloudImage.generate_name_avatar", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.CloudImage.upload", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.CloudImage.get_url", mock_cloud_service)
+    image_path = r"tests\test_routes\python_logo.jpg"
+    file = open(image_path, "rb")
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
-        with open(file_path, "wb") as fd:
-            response = client.patch(
-            "api/users/avatar",
-            # {"file": mock_image},
-            {"file": ("filename", fd, "python")},
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-    assert response.status_code == 201, response.text
+        response = client.patch(
+        "api/users/avatar",
+        files={"file": ("filename", file, "python_logo.jpg")},
+        headers={"Authorization": f"Bearer {no_email_token}"}
+    )
+    assert response.status_code == 401, response.text
+    data = response.json()
+    assert data["detail"] == "Could not validate credentials"
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_update_avatar_ok(client, access_token, monkeypatch):
+    new_avatar = "image_url"
+    mock_cloud_service = MagicMock(return_value=new_avatar)
+    monkeypatch.setattr("src.routes.users.CloudImage.generate_name_avatar", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.CloudImage.upload", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.CloudImage.get_url", mock_cloud_service)
+    image_path = r"tests\test_routes\python_logo.jpg"
+    file = open(image_path, "rb")
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        response = client.patch(
+        "api/users/avatar",
+        files={"file": ("filename", file, "python_logo.jpg")},
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["avatar"] == new_avatar
+    assert "id" in data

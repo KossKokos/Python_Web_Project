@@ -24,3 +24,4 @@ killer_instagram/migrations
 .python-version
 killer_instagram/poetry.lock
 killer_instagram/test.db
+killer_instagram/test.db
