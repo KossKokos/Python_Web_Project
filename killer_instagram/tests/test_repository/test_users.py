@@ -19,6 +19,10 @@ from src.repository.users import (
 from src.schemas.users import UserModel, UserRoleUpdate
 
 
+"""To start the test, enter : py test_users.py 
+You must be in the killer_instagram/tests/test_repository directory in the console"""
+
+
 class TestUsers(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):

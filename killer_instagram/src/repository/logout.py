@@ -43,6 +43,7 @@ async def is_token_blacklisted(user_id, db: Session):
     
     if token:
         result = await remove_old_blacklisted_token(token, db)
+        return result
     else:
         return "Ready to write a new blacklist_token"
 
