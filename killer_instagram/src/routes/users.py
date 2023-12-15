@@ -27,15 +27,6 @@ async def update_user(
     if user.id != current_user.id:
         raise HTTPException(status_code=403, detail="You don't have permission to update this user")  
 
-    if body.username:
-        user.username = body.username
-    if body.email:
-        user.email = body.email
-    if body.password:
-        user.password = body.password
-    if body.avatar:
-        user.avatar = body.avatar
-
     db.commit()
     db.refresh(user)
     return user

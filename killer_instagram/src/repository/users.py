@@ -2,12 +2,16 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.database.models import User
-from src.schemas.users import UserModel, UserRoleUpdate
+from src.schemas.users import UserModel, UserRoleUpdate, UserUpdate
 
 from fastapi import APIRouter, HTTPException, Depends
 
 from pydantic import BaseModel
 from typing import Optional
+
+from src.database.db import get_db
+from src.repository.users import repository_users  
+from src.services.auth import service_auth, get_current_user
 
 
 router = APIRouter()
@@ -18,11 +22,19 @@ class UserUpdate(BaseModel):
     password: Optional[str]
     avatar: Optional[str]
 
-@router.put("/users/{user_id}", response_model=UserModel)
-async def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
+
+async def update_user(
+    user_id: int,
+    body: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user = await repository_users.get_user_by_id(user_id=user_id, db=db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.id != current_user.id:
+        raise HTTPException(status_code=403, detail="You don't have permission to update this user")  
 
     if body.username:
         user.username = body.username
@@ -32,9 +44,8 @@ async def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_
         user.password = body.password
     if body.avatar:
         user.avatar = body.avatar
-    
-    db.commit()
-    db.refresh(user)
+
+    await repository_users.update_user(db=db, user=user)  
     return user
 
 

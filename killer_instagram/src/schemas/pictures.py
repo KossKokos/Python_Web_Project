@@ -2,6 +2,17 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
+class UserUpdateTest(BaseModel):
+    username: Optional[str]
+    email: Optional[str]
+    password: Optional[str]
+    avatar: Optional[str]
+
+
+class PhotoUpdateTitle(BaseModel):
+    title: str = Field(..., min_length=5, max_length=50)
+
+
 class PhotoBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=50)
     url: str = Field(..., max_length=255)
