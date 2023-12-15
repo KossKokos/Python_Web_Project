@@ -41,14 +41,20 @@ async def upload_image(
 
     try:
         file_extension = file.filename.split(".")[-1]
-        image_path = f"images/{current_user.id}_{description}_original.{file_extension}"
+        # image_path = f"images/{current_user.id}_{description}_original.{file_extension}"
 
+        # TODO: не потрібно зберігати фото локально, без цього працює нормально
+        
         # Save the file
-        with open(image_path, "wb") as f:
-            f.write(file.file.read())
+        # with open(image_path, "wb") as f:
+        #     f.write(file.file.read())
+
+        publick_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
+        cloudinary_response = CloudImage.upload_image(file=file.file, public_id=publick_id)
+        # тут просто викликаю метод, щоб він генерував public_id, щоб самому не писати
 
         # Upload the original image to Cloudinary asynchronously
-        cloudinary_response = CloudImage.upload_image(image_path, public_id=f"{current_user.id}_{description}")
+        # cloudinary_response = CloudImage.upload_image(image_path, public_id=f"{current_user.id}_{description}")
 
         # Save image information to the database
         image = await repository_images.create_image(
@@ -67,6 +73,8 @@ async def upload_image(
             await repository_images.add_tag_to_image(db=db, image_id=image.id, tag_id=tag.id)
 
         # Add tags to the uploaded image on Cloudinary
+            
+        # тут передаю public_id, так як видавало помилку, коли передавав url
         CloudImage.add_tags(cloudinary_response["public_id"], tags)
 
         return image
@@ -198,7 +206,8 @@ async def remove_object_from_image(
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    transformed_image = CloudImage.remove_object(image.image_url, prompt)
+    # знову ж таки, поміняв url на punlic_id
+    transformed_image = CloudImage.remove_object(image.public_id, prompt)
     transformation_url = transformed_image['secure_url']
 
     # Save transformed image information to the database
@@ -222,7 +231,8 @@ async def apply_rounded_corners_to_image(
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    transformed_image = CloudImage.apply_rounded_corners(image.image_url, width, height)
+    # url на  public_id 
+    transformed_image = CloudImage.apply_rounded_corners(image.public_id, width, height)
     transformation_url = transformed_image['secure_url']
 
     # Save transformed image information to the database

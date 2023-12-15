@@ -32,10 +32,11 @@ class CloudImage:
         return f"Users/{user_folder}/Avatar/{name}"
 
     @staticmethod
-    def generate_name_image(email: str, image_id: int):
+    def generate_name_image(email: str, filename: int):
         user_folder = email
         name = hashlib.sha256(email.encode('utf-8')).hexdigest()[:12]
-        unique_name = f"{image_id}id" + name
+        # тут замінив image_id на filename, так як можна створювати унікальне ім'я за цим, монжна поміняти на будь-що
+        unique_name = f"{filename}," + name
         return f"Users/{user_folder}/Images/{unique_name}"
 
     @staticmethod
@@ -83,12 +84,14 @@ class CloudImage:
     @staticmethod
     def remove_object(image_url, prompt):
         transformation = f"e_gen_remove:prompt_{prompt}"
-        return cloudinary.uploader.upload(image_url, transformation=transformation)
+        # поміняв з cloudinary.uploader.upload на cloudinary.api.update, виникали помилки
+        return cloudinary.api.update(image_url, transformation=transformation)
 
     @staticmethod
     def apply_rounded_corners(image_url, width, height):
         transformation = f"c_fill,g_face,w_{width},h_{height}/r_max/f_png"
-        return cloudinary.uploader.upload(image_url, transformation=transformation)
+        # поміняв з cloudinary.uploader.upload на cloudinary.api.update, виникали помилки
+        return cloudinary.api.update(image_url, transformation=transformation)
 
     @staticmethod
     def improve_photo(image_url: str):

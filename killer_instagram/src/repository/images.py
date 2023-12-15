@@ -114,6 +114,10 @@ async def delete_image_from_db(db: Session, image_id: int) -> bool:
 
         if image:
             # Delete associated tags
+            transformed_links = db.query(TransformedImageLink).filter(TransformedImageLink.image_id==image_id).all()
+            for link in transformed_links: # тут добавив видалення transformed links також, бо виникала помилка при видалені фото
+                db.delete(link) # вони з'єднані за Foreign key
+
             db.execute(image_m2m_tag.delete().where(image_m2m_tag.c.image_id == image_id))
 
             # Delete the image
