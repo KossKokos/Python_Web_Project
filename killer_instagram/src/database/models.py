@@ -54,6 +54,7 @@ class Image(Base):
     comments = relationship('Comment', back_populates='image')
     image_url = Column(String)
     public_id = Column(String(255))
+    file_extension = Column(String, nullable=False)
 
     user = relationship("User", back_populates="images")
     tags = relationship("Tag", secondary="image_m2m_tag", back_populates="images")
@@ -64,10 +65,10 @@ class TransformedImageLink(Base):
     __tablename__ = "transformed_image_links"
 
     id = Column(Integer, primary_key=True)
-    image_id = Column(Integer, ForeignKey("images_table.id"), nullable=False)
+    image_id = Column(Integer, ForeignKey("images_table.id", ondelete='CASCADE'), nullable=False) # тут, я додав ondelete cascade 
     created_at = Column('created_at', DateTime, default=func.now())
-    transformation_url = Column(String(255), nullable=False, unique=True)
-    qr_code_url = Column(String(255), nullable=False)
+    transformation_url = Column(String(255), nullable=False) # тут силка не має бути унікальна, бо якщо я два рази хочу поміняти сайз фото,
+    qr_code_url = Column(String(255), nullable=False)# то в дб виникає помилка, бо 2 однакових url 
 
     image = relationship("Image", back_populates="transformed_links")
 
