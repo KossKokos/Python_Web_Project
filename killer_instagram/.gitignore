@@ -1,8 +1,0 @@
-migrations/env.py
-migrations/README
-migrations/script.py.mako
-migrations/versions/a77730efb34f_init.py
-migrations/versions/__pycache__/a77730efb34f_init.cpython-310.pyc
-.env
-.python-version
-alembic.ini

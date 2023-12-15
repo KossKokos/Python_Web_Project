@@ -11,3 +11,16 @@ killer_instagram/src/schemas/__pycache__/token.cpython-310.pyc
 killer_instagram/src/schemas/__pycache__/users.cpython-310.pyc
 killer_instagram/src/services/__pycache__/auth.cpython-310.pyc
 killer_instagram/src/services/__pycache__/email.cpython-310.pyc
+killer_instagram/migrations/env.py
+killer_instagram/migrations/README
+killer_instagram/migrations/script.py.mako
+killer_instagram/migrations/versions/a77730efb34f_init.py
+killer_instagram/migrations/versions/__pycache__/a77730efb34f_init.cpython-310.pyc
+killer_instagram/.env
+killer_instagram/.python-version
+killer_instagram/alembic.ini
+killer_instagram/postgres-data
+killer_instagram/migrations
+.python-version
+killer_instagram/poetry.lock
+.env

@@ -9,6 +9,7 @@ from src.repository import users as repository_users
 from src.services.auth import service_auth
 from src.conf.config import settings
 from src.schemas.users import UserResponce
+from src.services.cloudinary import CloudImage
 
 router = APIRouter(prefix='/users', tags=['users'])
 
@@ -50,8 +51,11 @@ async def update_avatar_user(file: UploadFile = File(), current_user: User = Dep
         api_secret=settings.cloudinary_api_secret,
         secure=True
     )
-    r = cloudinary.uploader.upload(file.file, public_id=f'ContactsApp/{current_user.username}', overwrite=True)
-    src_url = cloudinary.CloudinaryImage(f'ContactsApp/{current_user.username}')\
-                        .build_url(width=250, height=250, crop='fill', version=r.get('version'))
-    user = await repository_users.update_avatar(current_user.email, src_url, db)
+    public_id = CloudImage.generate_name_avatar(current_user.email)
+    cloud = CloudImage.upload_avatar(file=file.file, public_id=public_id)
+    avatar_url = CloudImage.get_url(public_id=public_id, cloud=cloud)
+    # r = cloudinary.uploader.upload(file.file, public_id=f'Users/Avatars/{current_user.email}/{current_user.username}', overwrite=True)
+    # src_url = cloudinary.CloudinaryImage(f'Users/Avatars/{current_user.email}/{current_user.username}')\
+    #                     .build_url(width=250, height=250, crop='fill', version=r.get('version'))
+    user = await repository_users.update_avatar(email=current_user.email, url=avatar_url, db=db)
     return user
