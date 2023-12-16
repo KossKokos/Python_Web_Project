@@ -20,7 +20,7 @@ allowd_operation_get = RoleRights(["user", "moderator", "admin"])
 
 @router.get('/me', response_model=UserResponce,
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(allowd_operation_get), Depends(logout_dependency)],
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_get)],
             description = "Any User")
 async def read_users_me(current_user: User = Depends(service_auth.get_current_user)):
     """
@@ -37,7 +37,9 @@ async def read_users_me(current_user: User = Depends(service_auth.get_current_us
     return current_user
 
 
-@router.patch('/avatar', response_model=UserResponce, status_code=status.HTTP_200_OK)
+@router.patch('/avatar', response_model=UserResponce, status_code=status.HTTP_200_OK,
+                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_get)],
+                        description = "Any User")
 async def update_avatar_user(file: UploadFile = File(), current_user: User = Depends(service_auth.get_current_user),
                              db: Session = Depends(get_db)):
     """

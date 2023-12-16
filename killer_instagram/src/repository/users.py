@@ -141,3 +141,16 @@ async def change_user_role(user: User, body: UserRoleUpdate, db: Session) -> Use
     return user
     
     
+async def delete_user(user_id: int, db: Session) -> None:
+    """
+    The delete_user function deletes a user from the database based on the user ID.
+
+    :param user_id: int: ID of the user to be deleted
+    :param db: Session: Database session
+    :return: None
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+    return None 
