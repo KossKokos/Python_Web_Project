@@ -20,7 +20,8 @@ router = APIRouter(prefix='/auth', tags=['auth'])
 security = HTTPBearer()
 
 allowd_operation_change_role= RoleRights(["admin"])
-
+allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
+allowd_operation_delete_user = RoleRights(["admin"])
 
 @router.post('/signup', status_code=status.HTTP_201_CREATED)
 async def signup(body: schema_users.UserModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
@@ -66,29 +67,34 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router.get('/refresh_token', response_model=schema_token.TokenResponce)
-async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db)):
+@router.get('/refresh_token', response_model=schema_token.TokenResponce,
+            dependencies=[Depends(logout_dependency),Depends(allowd_operation_any_user)],
+            description = "Any User")
+async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security),
+                        current_user: User= Depends(service_auth.get_current_user), db: Session = Depends(get_db)):
     """
     The refresh_token function is used to refresh the access and refresh tokens.
     It takes in a refresh token and returns an access_token, a new refresh_token, and the type of token (bearer).
-    
-    
+
+
     :param credentials: HTTPAuthorizationCredentials: Get the token from the request header
     :param db: Session: Create a connection to the database
     :return: A dict with the access_token, refresh_token and token type
     """
-    token = credentials.credentials
+
+    token = current_user.refresh_token
+    print (86, token)
     email = await service_auth.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, db)
 
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User with this token doesn't exist")
-    
+
     if user.refresh_token != token:
         user.refresh_token = None
         db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    
+
     access_token = await service_auth.create_access_token(data={"sub": email})
     refresh_token = await service_auth.create_refresh_token(data={"sub": email})
     await repository_users.update_token(user, refresh_token, db)
@@ -186,7 +192,7 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
 
 @router.patch('/change_role/{user_id}', response_model=UserResponce, 
                                         status_code=status.HTTP_202_ACCEPTED,
-                                        dependencies=[Depends(allowd_operation_change_role), Depends(logout_dependency)],
+                                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_change_role)],
                                         description = "Only admins"
                                         )
 async def change_user_role(
@@ -242,4 +248,33 @@ async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
     access_token = credentials.credentials
     user_id = current_user.id
     result =await token_to_blacklist(access_token, user_id, db)
-    return {"message": "Successfully logged out"}
+    return {"message": f"User {current_user.email} successfully logged out"}
+
+
+@router.delete('/delete_user/{user_id}',
+               status_code=status.HTTP_200_OK,
+               dependencies=[Depends(logout_dependency), Depends(allowd_operation_delete_user)],
+               description="Only admins")
+async def delete_user(user_id: int, current_user: User = Depends(service_auth.get_current_user),
+                      db: Session = Depends(get_db)):
+    """
+    The delete_user function allows an admin to delete a user.
+
+    :param user_id: int: ID of the user to be deleted
+    :param current_user: User: Get the current user from the database
+    :param db: Session: Database session
+    :return: HTTP status 204 (No Content)
+    """
+ 
+    user = await repository_users.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user.id == user_id:
+        raise HTTPException(status_code=403, detail="Permission denied. Cannot delete own account.")
+    
+    if user.id == 1:
+        raise HTTPException(status_code=403, detail="Permission denied. Superadmin user cannot be deleted.")
+
+    await repository_users.delete_user(user_id, db)
+    return {"message": f"User {current_user.email} successfully deleted"}
