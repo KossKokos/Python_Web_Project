@@ -68,22 +68,24 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
 
 
 @router.get('/refresh_token', response_model=schema_token.TokenResponce,
-            dependencies=[Depends(logout_dependency),Depends(allowd_operation_any_user)],
-            description = "Any User")
+            dependencies=[Depends(logout_dependency),Depends(allowd_operation_any_user)])
+        
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security),
                         current_user: User= Depends(service_auth.get_current_user), db: Session = Depends(get_db)):
     """
     The refresh_token function is used to refresh the access and refresh tokens.
-    It takes in a refresh token and returns an access_token, a new refresh_token, and the type of token (bearer).
-
-
+        It can be done by any user after login.
+        It takes in a refresh token and returns an access_token, a new refresh_token, and the type of token (bearer).
+    
+    
     :param credentials: HTTPAuthorizationCredentials: Get the token from the request header
+    :param current_user: User: Get the current user
     :param db: Session: Create a connection to the database
     :return: A dict with the access_token, refresh_token and token type
+    :doc-author: Trelent
     """
 
     token = current_user.refresh_token
-    print (86, token)
     email = await service_auth.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, db)
 
@@ -192,9 +194,7 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
 
 @router.patch('/change_role/{user_id}', response_model=UserResponce, 
                                         status_code=status.HTTP_202_ACCEPTED,
-                                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_change_role)],
-                                        description = "Only admins"
-                                        )
+                                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_change_role)])
 async def change_user_role(
     user_id: int,
     body: UserRoleUpdate,
@@ -230,7 +230,9 @@ async def change_user_role(
         raise HTTPException(status_code=400, detail="Invalid role provided")
     
 
-@router.get('/logout')
+@router.get('/logout',
+            status_code=status.HTTP_200_OK,
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db), 
                 current_user: User = Depends(service_auth.get_current_user)):
     """
@@ -253,8 +255,7 @@ async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
 
 @router.delete('/delete_user/{user_id}',
                status_code=status.HTTP_200_OK,
-               dependencies=[Depends(logout_dependency), Depends(allowd_operation_delete_user)],
-               description="Only admins")
+               dependencies=[Depends(logout_dependency), Depends(allowd_operation_delete_user)])
 async def delete_user(user_id: int, current_user: User = Depends(service_auth.get_current_user),
                       db: Session = Depends(get_db)):
     """
@@ -269,7 +270,10 @@ async def delete_user(user_id: int, current_user: User = Depends(service_auth.ge
     user = await repository_users.get_user_by_id(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
+      
+    if current_user.id != 1 and user.role == "admin":
+        raise HTTPException(status_code=403, detail="Permission denied. Only supreadmin can delede other admin.")
+    
     if current_user.id == user_id:
         raise HTTPException(status_code=403, detail="Permission denied. Cannot delete own account.")
     
