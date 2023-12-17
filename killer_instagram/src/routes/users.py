@@ -7,7 +7,7 @@ from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
 from src.services.auth import service_auth
-from src.services.cloud_photos import CloudImage
+from src.services.cloudinary import CloudImage
 from src.conf.config import settings
 from src.schemas.users import UserResponce
 from src.services.roles import RoleRights
