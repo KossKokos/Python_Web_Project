@@ -1,6 +1,7 @@
 import qrcode
 from sqlalchemy.orm import Session
 from src.database.models import TransformedImageLink
+from src.services.cloudinary import CloudImage
 
 async def get_qr_code_url(db: Session, image_id: int) -> str:
     """
@@ -32,7 +33,8 @@ def generate_qr_code(url: str) -> dict:
     # img = qr.make_image(fill_color="black", back_color="white")
     # img.save("qrcode.png")
 
-    return img = qr.make_image(fill_color="black", back_color="white")
+    img = qr.make_image(fill_color="black", back_color="white")
+    return img
 
 def generate_and_upload_qr_code(url: str, public_id: str) -> dict:
     """
@@ -48,7 +50,7 @@ def generate_and_upload_qr_code(url: str, public_id: str) -> dict:
     qr_code_data = generate_qr_code(url)
     
     # Upload the QR code to Cloudinary
-    qr_code_upload_response = upload(
+    qr_code_upload_response = CloudImage.upload_image(
         qr_code_data["url"],
         public_id=public_id,
         overwrite=True,

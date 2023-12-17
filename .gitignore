@@ -24,3 +24,6 @@ killer_instagram/migrations
 .python-version
 killer_instagram/poetry.lock
 .env
+killer_instagram/src/database/alembic
+killer_instagram/alembic
+.vscode

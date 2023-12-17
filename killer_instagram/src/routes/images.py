@@ -112,7 +112,7 @@ async def delete_image(
             raise HTTPException(status_code=403, detail="Permission denied")
         
         # Delete image from /images
-        await repository_images.delete_image_local(db=db, image=image)
+        # await repository_images.delete_image_local(db=db, image=image)
 
         # Delete image from Cloudinary
         CloudImage.delete_image(public_id=image.public_id)
