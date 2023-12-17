@@ -12,6 +12,7 @@ from src.conf.config import settings
 from src.schemas.users import UserResponce
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
+from src.services.cloudinary import CloudImage
 
 router = APIRouter(prefix='/users', tags=['users'])
 

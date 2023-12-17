@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, func, CheckConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, func, CheckConstraint, Table
 from sqlalchemy.orm import relationship, declarative_base, Mapped
 from sqlalchemy.sql.sqltypes import Date, DateTime
 
@@ -18,6 +18,7 @@ class User(Base):
     email = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
+    images = relationship('Image', back_populates='user')
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
@@ -38,27 +39,52 @@ class User(Base):
         return str(self.id)
 
 
-class Picture(Base):
-    __tablename__ = 'pictures_table'
+image_m2m_tag = Table(
+    "image_m2m_tag",
+    Base.metadata,
+    Column("id", Integer, primary_key=True),
+    Column("image_id", Integer, ForeignKey("images_table.id", ondelete="CASCADE")),
+    Column("tag_id", Integer, ForeignKey("tags_table.id", ondelete="CASCADE")),
+)
+
+
+class Image(Base):
+    __tablename__ = "images_table"
 
     id = Column(Integer, primary_key=True)
-    description = Column(String(150), nullable=True)
-    url = Column(String(255), nullable=False)
-    user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'))
-    comments = relationship('Comment', back_populates='picture')
-    tags = relationship('Tag', back_populates='picture')
-    user = relationship('User', back_populates='pictures')
+    user_id = Column(Integer, ForeignKey("users_table.id"), nullable=False)
+    description = Column(String(255))
+    upload_time = Column(DateTime(timezone=True), server_default=func.now())
+    comments = relationship('Comment', back_populates='image')
+    image_url = Column(String)
+    public_id = Column(String(255))
+    file_extension = Column(String, nullable=False)
 
+    user = relationship("User", back_populates="images")
+    tags = relationship("Tag", secondary="image_m2m_tag", back_populates="images")
+    transformed_links = relationship("TransformedImageLink", back_populates="image")
+
+
+class TransformedImageLink(Base):
+    __tablename__ = "transformed_image_links"
+
+    id = Column(Integer, primary_key=True)
+    image_id = Column(Integer, ForeignKey("images_table.id", ondelete='CASCADE'), nullable=False) # тут, я додав ondelete cascade 
+    created_at = Column('created_at', DateTime, default=func.now())
+    transformation_url = Column(String(255), nullable=False)
+    qr_code_url = Column(String(255), nullable=True, server_default="")
+
+    image = relationship("Image", back_populates="transformed_links")
 
 class Comment(Base):
     __tablename__ = 'comments_table'
     
     id = Column(Integer, primary_key=True)
     comment = Column(String(150), nullable=False)
-    created_at = Column('crated_at', DateTime, default=func.now())
+    created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime)
-    picture_id = Column('picture_id', ForeignKey('pictures_table.id', ondelete='CASCADE'))
-    picture = relationship('Picture', back_populates='comments')
+    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'))
+    image = relationship('Image', back_populates='comments')
 
 
 class Tag(Base):
@@ -66,8 +92,8 @@ class Tag(Base):
     
     id = Column(Integer, primary_key=True)
     tag = Column(String(30), nullable=False, unique=True)
-    picture_id = Column('picture_id', ForeignKey('pictures_table.id', ondelete='CASCADE'))
-    picture = relationship('Picture', back_populates='tags')
+    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'))
+    images = relationship('Image', secondary='image_m2m_tag', back_populates='tags')
 
 
 class BlacklistedToken(Base):

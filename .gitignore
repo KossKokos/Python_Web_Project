@@ -25,3 +25,8 @@ killer_instagram/migrations
 killer_instagram/poetry.lock
 killer_instagram/test.db
 killer_instagram/test.db
+
+.env
+killer_instagram/src/database/alembic
+killer_instagram/alembic
+.vscode

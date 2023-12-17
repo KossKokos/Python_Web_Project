@@ -10,12 +10,12 @@ class Settings(BaseSettings):
     mail_from: EmailStr = 'example@com.com'
     mail_port: int = 666
     mail_server: str = 'mail_server'
-    cloudinary_name: str = 'cloudinary_name'
-    cloudinary_api_key: str = 'cloudinary_api_key'
-    cloudinary_api_secret: str = 'cloudinary_secret'
+    cloudinary_name: str = 'dgfy9rl4j'
+    cloudinary_api_key: str = '279781871815418'
+    cloudinary_api_secret: str = 'ZrAB5euIOuXbieCTtQjnqjoSpP0'
     redis_name: str = 'redis'
     redis_host: str = 'localhost'
-    redis_port: int = 1111
+    redis_port: int = 6379
     redis_db: int = 0
 
     class Config:

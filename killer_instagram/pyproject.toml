@@ -38,6 +38,7 @@ urllib3 = "1.26.18"
 uvicorn = "0.21.1"
 pytest-asyncio = "0.23.2"
 pytest-trio = "0.8.0"
+qrcode = {extras = ["pil"], version = "^7.4.2"}
 
 
 [build-system]
