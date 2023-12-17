@@ -14,8 +14,8 @@ class ImageModel(BaseModel):
 
 class ImageStatusUpdate(BaseModel):
     done: bool
-
-
+    transformation_url: Optional[str]
+    qr_code_url: Optional[str]
 class ImageResponse(BaseModel):
     id: int
     user_id: int

@@ -16,3 +16,7 @@ async def get_or_create_tag(db: Session, tag_name: str) -> Tag:
     db.refresh(new_tag)
 
     return new_tag
+
+async def get_existing_tags(db: Session):
+    existing_tags = db.query(Tag.tag).distinct().all()
+    return [tag[0] for tag in existing_tags]

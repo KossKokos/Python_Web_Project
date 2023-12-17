@@ -1,9 +1,9 @@
 import hashlib
 
 import cloudinary
-import cloudinary.api
-import cloudinary.uploader
-from cloudinary.uploader import upload
+from cloudinary import api
+from cloudinary import CloudinaryImage
+from cloudinary import uploader
 from cloudinary.utils import cloudinary_url
 from typing import List
 
@@ -80,30 +80,31 @@ class CloudImage:
         tags_str = ','.join(tags)
         cloudinary.api.update(public_id, tags=tags_str, resource_type='image')
 
+    # @staticmethod
+    # def remove_object(public_id, prompt):
+    #     transformation = f"e_gen_remove:prompt_{prompt}"
+    #     options = {"transformation": transformation}
+    #     return uploader.upload(public_id, **options)
 
     @staticmethod
-    def remove_object(image_url, prompt):
+    def remove_object(public_id, prompt):
         transformation = f"e_gen_remove:prompt_{prompt}"
-        # поміняв з cloudinary.uploader.upload на cloudinary.api.update, виникали помилки
-        return cloudinary.api.update(image_url, transformation=transformation)
+        return cloudinary.api.update(public_id, transformation=transformation)
 
     @staticmethod
-    def apply_rounded_corners(image_url, width, height):
+    def apply_rounded_corners(public_id, width, height):
         transformation = f"c_fill,g_face,w_{width},h_{height}/r_max/f_png"
-        # поміняв з cloudinary.uploader.upload на cloudinary.api.update, виникали помилки
-        return cloudinary.api.update(image_url, transformation=transformation)
+        return cloudinary.api.update(public_id, transformation=transformation)
 
     @staticmethod
-    def improve_photo(image_url: str):
+    def improve_photo(public_id: str):
         width = 100
         height = 150
         crop = "fill"
-        
-        url, options = cloudinary_url(image_url, width=width, height=height, crop=crop)
-        
+
+        url, options = cloudinary_url(public_id, width=width, height=height, crop=crop)
+
         print(f"Transformed URL: {url}")
-        
+
         return cloudinary.uploader.upload(url, **options)
-
-
 

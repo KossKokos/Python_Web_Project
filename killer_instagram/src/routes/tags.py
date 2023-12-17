@@ -9,6 +9,8 @@ from src.schemas.images import ImageModel, ImageResponse
 from src.database.models import User
 from typing import List
 from src.services.cloudinary import upload_to_cloudinary
+from sqlalchemy.orm import Session
+from src.database.models import Tag
 
 router = APIRouter(prefix='tags', tags=['tags'])
 
@@ -18,7 +20,3 @@ router = APIRouter(prefix='tags', tags=['tags'])
 так як вони зв'язані, це на ваш вибір
 """
 
-@router.get("/tags", response_model=List[str])
-async def get_existing_tags(db: Session = Depends(get_db)):
-    existing_tags = await repository_images.get_existing_tags(db)
-    return existing_tags

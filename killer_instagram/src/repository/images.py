@@ -92,7 +92,6 @@ async def update_image_in_db(db: Session, image_id: int, new_description: str) -
         image.description = new_description
         db.commit()
         db.refresh(image)
-        #  print(f"Image description updated in the database. Image ID: {image_id}, New Description: {new_description}")
         return ImageResponse.from_orm(image)
     return None
 
@@ -170,9 +169,6 @@ async def create_image(
     Returns:
         ImageResponse: The created image.
     """
-    # TODO Зміна назви зображення на сервері Cloudinary
-    # public_id = f"{user_id}_{description}"
-
     image = Image(
         user_id=user_id,
         description=description,
@@ -196,43 +192,32 @@ async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
     return created_image
 
 
-    # public_id = CloudImage.generate_name_image(email=current_user.email, image_id=image.id)
-    # cloud = CloudImage.upload_image(file=image_path, public_id=public_id)
-    # image_url = CloudImage.get_url(public_id=public_id, cloud=cloud)
-    
-    # TODO: це треба перенести в scr/repository/images.py
-    # created_image = await repository_images.add_url_public_id(user_id=current_user.id, image_id=image.id, db=db)
-    # created_image.image_url = image_url
-    # created_image.public_id = public_id
-    # db.commit()
-    # db.refresh(created_image)   
+# async def delete_image_local(
+#     db: Session,
+#     image: Image
+# ) -> ImageResponse:
+#     """
+#     Delete an image and its corresponding file from the local storage.
 
-async def delete_image_local(
-    db: Session,
-    image: Image
-) -> ImageResponse:
-    """
-    Delete an image and its corresponding file from the local storage.
+#     Args:
+#         db (Session): The database session.
+#         image (Image): The image to be deleted.
 
-    Args:
-        db (Session): The database session.
-        image (Image): The image to be deleted.
+#     Returns:
+#         ImageResponse: The deleted image.
+#     """
 
-    Returns:
-        ImageResponse: The deleted image.
-    """
+#     # Отримання розширення файлу зображення
+#     file_extension = image.file_extension
 
-    # Отримання розширення файлу зображення
-    file_extension = image.file_extension
+#     # Фізичне видалення файлу зображення
+#     image_path = f"images/{image.user_id}_{image.description}_original.{file_extension}"
+#     try:
+#         os.remove(image_path)
+#     except FileNotFoundError:
+#         pass  # Якщо файл вже видалено, ігноруємо помилку
 
-    # Фізичне видалення файлу зображення
-    image_path = f"images/{image.user_id}_{image.description}_original.{file_extension}"
-    try:
-        os.remove(image_path)
-    except FileNotFoundError:
-        pass  # Якщо файл вже видалено, ігноруємо помилку
-
-    return ImageResponse.from_db_model(image)
+#     return ImageResponse.from_db_model(image)
 
 async def update_image_cloudinary_info(
     db: Session,
@@ -301,7 +286,7 @@ async def create_transformed_image_link(
     qr_code_url: str,
 ) -> ImageStatusUpdate:
     """
-    Create a transformed image link and store it in the database.
+    Create or update a transformed image link and store it in the database.
 
     Args:
         db (Session): The database session.
@@ -312,12 +297,27 @@ async def create_transformed_image_link(
     Returns:
         ImageStatusUpdate: Status of the operation.
     """
-    transformed_link = TransformedImageLink(
-        image_id=image_id,
-        transformation_url=transformation_url,
-        qr_code_url=qr_code_url,
-    )
-    db.add(transformed_link)
+    existing_link = db.query(TransformedImageLink).filter_by(image_id=image_id).first()
+
+    if existing_link:
+        # If a record already exists for the given image_id, update it
+        existing_link.transformation_url = transformation_url
+        existing_link.qr_code_url = qr_code_url
+    else:
+        # If no record exists, create a new one
+        new_link = TransformedImageLink(
+            image_id=image_id,
+            transformation_url=transformation_url,
+            qr_code_url=qr_code_url,
+        )
+        db.add(new_link)
+
     db.commit()
 
-    return ImageStatusUpdate(done=True)
+    response_data = {
+        "done": True,
+        "transformation_url": transformation_url,
+        "qr_code_url": qr_code_url,
+    }
+
+    return ImageStatusUpdate(**response_data)

@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.services.auth import service_auth
 from src.repository import images as repository_images
+from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
-from src.database.models import User
+from src.database.models import User, TransformedImageLink
 from src.database.database import db_transaction
+from src.repository.tags import get_existing_tags
 from typing import List
 from src.services.cloudinary import CloudImage
+from src.services.qr_code import get_qr_code_url, generate_qr_code
 
 router = APIRouter(prefix='/images', tags=['images'])
 
@@ -41,20 +44,9 @@ async def upload_image(
 
     try:
         file_extension = file.filename.split(".")[-1]
-        # image_path = f"images/{current_user.id}_{description}_original.{file_extension}"
-
-        # TODO: не потрібно зберігати фото локально, без цього працює нормально
-        
-        # Save the file
-        # with open(image_path, "wb") as f:
-        #     f.write(file.file.read())
 
         publick_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
         cloudinary_response = CloudImage.upload_image(file=file.file, public_id=publick_id)
-        # тут просто викликаю метод, щоб він генерував public_id, щоб самому не писати
-
-        # Upload the original image to Cloudinary asynchronously
-        # cloudinary_response = CloudImage.upload_image(image_path, public_id=f"{current_user.id}_{description}")
 
         # Save image information to the database
         image = await repository_images.create_image(
@@ -72,9 +64,13 @@ async def upload_image(
             tag = await repository_images.get_or_create_tag(db=db, tag_name=tag_name)
             await repository_images.add_tag_to_image(db=db, image_id=image.id, tag_id=tag.id)
 
+        # Add new tags to the existing tags list
+        existing_tags = await get_existing_tags(db)
+        for tag_name in tags:
+            if tag_name not in existing_tags:
+                existing_tags.append(tag_name)
+
         # Add tags to the uploaded image on Cloudinary
-            
-        # тут передаю public_id, так як видавало помилку, коли передавав url
         CloudImage.add_tags(cloudinary_response["public_id"], tags)
 
         return image
@@ -206,19 +202,33 @@ async def remove_object_from_image(
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    # знову ж таки, поміняв url на punlic_id
     transformed_image = CloudImage.remove_object(image.public_id, prompt)
     transformation_url = transformed_image['secure_url']
+
+    # Check if QR code URL exists in the database
+    qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
+
+    if qr_code_link:
+        qr_code_url = qr_code_link.qr_code_url
+    else:
+        qr_code_url = None
 
     # Save transformed image information to the database
     await repository_images.create_transformed_image_link(
         db=db,
         image_id=image.id,
         transformation_url=transformation_url,
-        qr_code_url="",  # You can generate a QR code here if needed
+        qr_code_url=qr_code_url,  # You can generate a QR code here if needed
     )
 
-    return ImageStatusUpdate(done=True)
+    response_data = {
+        "done": True,
+        "transformation_url": transformation_url,
+        "qr_code_url": qr_code_url,
+    }
+
+    return ImageStatusUpdate(**response_data)
+
 
 @router.post("/apply_rounded_corners/{image_id}")
 async def apply_rounded_corners_to_image(
@@ -266,3 +276,48 @@ async def improve_photo(
     )
 
     return ImageStatusUpdate(done=True)
+
+
+@router.post("/get_link_qrcode/{image_id}")
+async def get_transformed_image_link_qrcode(
+    image_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Generate a link for the transformed image and QR code.
+
+    Args:
+        image_id (int): The ID of the original image.
+        db (Session): The database session.
+
+    Returns:
+        dict: The response containing the transformation URL and QR code URL.
+    """
+    # Get image from db
+    image = await get_image_by_id(db=db, image_id=image_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # Check if a transformed link exists in the database
+    transformed_link = await get_transformed_image_link(db=db, image_id=image_id)
+    if transformed_link:
+        transformation_url = transformed_link.transformation_url
+    else:
+        # If not found, generate a link for the transformed image
+        prompt = "your_prompt_here"  # Replace with your prompt
+        transformed_image = CloudImage.remove_object(image.public_id, prompt)
+        transformation_url = transformed_image['secure_url']
+
+    # Generate a QR code for the transformation URL
+    qr_code_data = generate_qr_code(transformation_url)
+
+    # Save QR code URL to db
+    qr_code_url = qr_code_data["url"]
+    await create_transformed_image_link(db=db, image_id=image_id, transformation_url=transformation_url, qr_code_url=qr_code_url)
+
+    response_data = {
+        "transformation_url": transformation_url,
+        "qr_code_url": qr_code_url,
+    }
+
+    return response_data
