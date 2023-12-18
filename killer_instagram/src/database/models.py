@@ -1,14 +1,33 @@
 from typing import List
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, func, CheckConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, func, CheckConstraint, DateTime
 from sqlalchemy.orm import relationship, declarative_base, Mapped
 from sqlalchemy.sql.sqltypes import Date, DateTime
+
+from datetime import datetime
+from database import Base
+
 
 Base = declarative_base()
     
 """
 Змінюйте, де потрібно, робіть міграції і перевіряйте
 """
+
+class CommentDB(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    text = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    image_id = Column(Integer, ForeignKey("images.id"))
+
+    author = relationship("User", back_populates="comments")
+    image = relationship("Image", back_populates="comments")
+
 
 class User(Base):
     __tablename__ = "users_table"
