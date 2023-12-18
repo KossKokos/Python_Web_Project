@@ -23,8 +23,6 @@ class User(Base):
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
     role = Column(String(20), nullable=False, default='user')
-    pictures = relationship('Picture', back_populates='user')
-    #blacklisted_tokens = relationship('BlacklistedToken', back_populates='user')
     blacklisted_token = relationship('BlacklistedToken', uselist=False, back_populates='user')
     
 
@@ -92,7 +90,6 @@ class Tag(Base):
     
     id = Column(Integer, primary_key=True)
     tag = Column(String(30), nullable=False, unique=True)
-    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'))
     images = relationship('Image', secondary='image_m2m_tag', back_populates='tags')
 
 
