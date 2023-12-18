@@ -19,7 +19,6 @@ async def token_to_blacklist(access_token: str, user_id, db: Session):
     result = await is_token_blacklisted (user_id, db)
     token = BlacklistedToken()
     token.user_id =  user_id
-    print (14,token.user_id)
     token.blacklisted_token = access_token
     db.add(token)
     db.commit()

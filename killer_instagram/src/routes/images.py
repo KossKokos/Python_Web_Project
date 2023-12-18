@@ -21,9 +21,10 @@ allowd_operation_admin= RoleRights(["admin"])
 allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
 allowd_operation_delete_user = RoleRights(["admin"])
 
-@router.post("/", response_model=ImageResponse,
+@router.post("/", 
              status_code=status.HTTP_200_OK,
-             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)],
+             response_model=ImageResponse)
 async def upload_image(
     description: str,
     tags: List[str] = Query(..., description="List of tags. Use existing tags or add new ones."),
@@ -44,15 +45,13 @@ async def upload_image(
     Returns:
         ImageResponse: The created image.
     """
-    print (47, current_user)
+
     # Tag limit check
     if len(tags) > 5:
-        print (50, tags)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Too many tags. Maximum is 5.")
 
     try:
         file_extension = file.filename.split(".")[-1]
-        print (53, file_extension)
         publick_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
         cloudinary_response = CloudImage.upload_image(file=file.file, public_id=publick_id)
 
@@ -68,9 +67,10 @@ async def upload_image(
         )
 
         # Add tags to the image
-        for tag_name in tags:
-            tag = await repository_images.get_or_create_tag(db=db, tag_name=tag_name)
-            await repository_images.add_tag_to_image(db=db, image_id=image.id, tag_id=tag.id)
+        # for tag_name in tags:
+        #     tag = await repository_images.get_or_create_tag(db=db, tag_name=tag_name)
+        #     print(73, tag.id)
+        #     await repository_images.add_tag_to_image(db=db, image_id=image.id, tag_id=tag.id)
 
         # Add new tags to the existing tags list
         existing_tags = await get_existing_tags(db)

@@ -30,3 +30,5 @@ killer_instagram/test.db
 killer_instagram/src/database/alembic
 killer_instagram/alembic
 .vscode
+.venv
+killer_instagram\migrations
