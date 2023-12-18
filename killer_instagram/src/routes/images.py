@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.services.auth import service_auth
 from src.repository import images as repository_images
-from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
+# from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 from src.database.models import User, TransformedImageLink
 from src.database.database import db_transaction
@@ -302,26 +302,26 @@ async def get_transformed_image_link_qrcode(
         dict: The response containing the transformation URL and QR code URL.
     """
     # Get image from db
-    image = await get_image_by_id(db=db, image_id=image_id)
+    image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
     # Check if a transformed link exists in the database
-    transformed_link = await get_transformed_image_link(db=db, image_id=image_id)
-    if transformed_link:
-        transformation_url = transformed_link.transformation_url
-    else:
+    # transformed_link = await repository_images.get_transformed_image_link(db=db, image_id=image_id)
+    # if transformed_link:
+    #     transformation_url = transformed_link.transformation_url
+    # else:
         # If not found, generate a link for the transformed image
-        prompt = "your_prompt_here"  # Replace with your prompt
-        transformed_image = CloudImage.remove_object(image.public_id, prompt)
-        transformation_url = transformed_image['secure_url']
+    prompt = "your_prompt_here"  # Replace with your prompt
+    transformed_image = CloudImage.remove_object(image.public_id, prompt)
+    transformation_url = transformed_image['secure_url']
 
     # Generate a QR code for the transformation URL
     qr_code_data = generate_qr_code(transformation_url)
 
     # Save QR code URL to db
     qr_code_url = qr_code_data["url"]
-    await create_transformed_image_link(db=db, image_id=image_id, transformation_url=transformation_url, qr_code_url=qr_code_url)
+    await repository_images.create_transformed_image_link(db=db, image_id=image_id, transformation_url=transformation_url, qr_code_url=qr_code_url)
 
     response_data = {
         "transformation_url": transformation_url,
