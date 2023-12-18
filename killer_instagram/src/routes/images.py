@@ -12,11 +12,18 @@ from src.repository.tags import get_existing_tags
 from typing import List
 from src.services.cloudinary import CloudImage
 from src.services.qr_code import get_qr_code_url, generate_qr_code
+from src.services.roles import RoleRights
+from src.services.logout import logout_dependency
 
 router = APIRouter(prefix='/images', tags=['images'])
 
+allowd_operation_admin= RoleRights(["admin"])
+allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
+allowd_operation_delete_user = RoleRights(["admin"])
 
-@router.post("/", response_model=ImageResponse)
+@router.post("/", response_model=ImageResponse,
+             status_code=status.HTTP_200_OK,
+             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def upload_image(
     description: str,
     tags: List[str] = Query(..., description="List of tags. Use existing tags or add new ones."),
@@ -37,14 +44,15 @@ async def upload_image(
     Returns:
         ImageResponse: The created image.
     """
-
+    print (47, current_user)
     # Tag limit check
     if len(tags) > 5:
+        print (50, tags)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Too many tags. Maximum is 5.")
 
     try:
         file_extension = file.filename.split(".")[-1]
-
+        print (53, file_extension)
         publick_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
         cloudinary_response = CloudImage.upload_image(file=file.file, public_id=publick_id)
 
