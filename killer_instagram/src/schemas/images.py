@@ -31,7 +31,7 @@ class ImageResponse(BaseModel):
             user_id=db_model.user_id,
             description=db_model.description,
             upload_time=db_model.upload_time,
-            # image_url=None
+            public_id=db_model.public_id,
             image_url=db_model.image_url,
         )
 
