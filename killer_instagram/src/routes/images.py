@@ -282,7 +282,6 @@ async def apply_rounded_corners_to_image(
         transformation_url=transformation_url,
         qr_code_url="",  # You can generate a QR code here if needed
     )
-    print (284, result.__dict__)
     
     message = {"cereated": "done", "id": result.id, "transformation_url": result.transformation_url, "qr_code_url": result.qr_code_url }
     return message
