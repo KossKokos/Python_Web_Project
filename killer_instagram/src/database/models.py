@@ -23,6 +23,7 @@ class User(Base):
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
     role = Column(String(20), nullable=False, default='user')
+    ratings = relationship("Rating", back_populates="user")
     blacklisted_token = relationship('BlacklistedToken', uselist=False, back_populates='user')
     
 
@@ -57,7 +58,7 @@ class Image(Base):
     image_url = Column(String)
     public_id = Column(String(255))
     file_extension = Column(String, nullable=False)
-
+    rating = relationship("Rating", back_populates="image")
     user = relationship("User", back_populates="images")
     tags = relationship("Tag", secondary="image_m2m_tag", back_populates="images")
     transformed_links = relationship("TransformedImageLink", back_populates="image")
@@ -92,6 +93,16 @@ class Tag(Base):
     tag = Column(String(30), nullable=False, unique=True)
     images = relationship('Image', secondary='image_m2m_tag', back_populates='tags')
 
+
+class Rating(Base):
+    __tablename__ = "rating_table"
+
+    id = Column(Integer, primary_key=True)
+    rating = Column(Integer, nullable=False)
+    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_table.id"), nullable=False)
+    image = relationship('Image', back_populates='rating')
+    user = relationship('User', back_populates='ratings')
 
 class BlacklistedToken(Base):
     __tablename__ = 'blacklisted_tokens'

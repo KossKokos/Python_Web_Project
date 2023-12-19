@@ -20,7 +20,7 @@ class ImageStatusUpdate(BaseModel):
 class ImageResponse(BaseModel):
     id: int
     user_id: int
-    public_id: Optional[str]
+    # public_id: Optional[str]
     description: Optional[str]
     image_url: Optional[str]
 
@@ -31,7 +31,7 @@ class ImageResponse(BaseModel):
             user_id=db_model.user_id,
             description=db_model.description,
             upload_time=db_model.upload_time,
-            public_id=db_model.public_id,
+            # public_id=db_model.public_id,
             image_url=db_model.image_url,
         )
 
