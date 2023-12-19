@@ -6,11 +6,9 @@ sys.path.append(str(path_root))
 
 import pytest
 from unittest.mock import MagicMock, patch
-from jose import jwt 
 
 from src.database.models import User, Image
 from src.services.auth import service_auth
-from src.conf.config import settings
 
 
 """To start the test, enter : pytest tests/test_routes/test_images.py -v 
@@ -18,6 +16,18 @@ You must be in the killer_instagram directory in the console"""
 
 
 """Fixtures:"""
+
+@pytest.fixture(scope="function")
+def get_access_token(client, user):
+    login_responce = client.post(
+            "/api/auth/login",
+            data={"username": user["email"], "password": user["password"]}
+        )
+    data = login_responce.json()
+    return data["access_token"]
+
+
+"""Tests:"""
 
 def test_signup_user(client, session, user, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
@@ -38,6 +48,7 @@ def test_signup_user(client, session, user, monkeypatch):
         assert created_user["email"] == user["email"]
         assert created_user["username"] == user["username"]
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_get_login_responce(client, user):
     login_responce = client.post(
@@ -48,17 +59,7 @@ def test_get_login_responce(client, user):
     login_responce_data = login_responce.json()
     assert login_responce_data["token_type"] == "bearer"
 
-
-@pytest.fixture(scope="function")
-def get_access_token(client, user):
-    login_responce = client.post(
-            "/api/auth/login",
-            data={"username": user["email"], "password": user["password"]}
-        )
-    data = login_responce.json()
-    return data["access_token"]
-
-"""Tests:"""
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_upload_picture_ok(client, get_access_token, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
@@ -89,6 +90,8 @@ def test_upload_picture_ok(client, get_access_token, monkeypatch):
         assert image["public_id"] == cloudinary_responce["public_id"]
         assert image["user_id"] == 1
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
 def test_get_image_ok(client):
     image_id = 1
     with patch.object(service_auth, 'r_cashe') as r_mock:
@@ -102,6 +105,7 @@ def test_get_image_ok(client):
         assert data["id"] == image_id
         assert data["description"] == "test_description"
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_get_image_not_found(client):
     image_id = 123
@@ -115,6 +119,7 @@ def test_get_image_not_found(client):
         data = responce.json()
         assert data["detail"] == "Image not found"
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_update_image_description(client, get_access_token, monkeypatch):
     image_id = 1
@@ -132,6 +137,8 @@ def test_update_image_description(client, get_access_token, monkeypatch):
         assert data["description"] == new_description
         assert data["id"] == image_id
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
 def test_delete_image(client, get_access_token, monkeypatch):
     image_id = 1
     with patch.object(service_auth, 'r_cashe') as r_mock:
@@ -145,6 +152,8 @@ def test_delete_image(client, get_access_token, monkeypatch):
         assert responce.status_code == 202, responce.text
         data = responce.json()
         assert data["message"] == "Image deleted successfully"
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_delete_image_not_found(client, get_access_token, session, monkeypatch):
     image_id = 1
@@ -161,4 +170,3 @@ def test_delete_image_not_found(client, get_access_token, session, monkeypatch):
         assert responce.status_code == 404, responce.text
         data = responce.json()
         assert data["detail"] == "Image not found"
-  
