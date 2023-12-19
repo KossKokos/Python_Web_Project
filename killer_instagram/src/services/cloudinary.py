@@ -91,10 +91,18 @@ class CloudImage:
         transformation = f"e_gen_remove:prompt_{prompt}"
         return cloudinary.api.update(public_id, transformation=transformation)
 
+
     @staticmethod
-    def apply_rounded_corners(public_id, width, height):
-        transformation = f"c_fill,g_face,w_{width},h_{height}/r_max/f_png"
-        return cloudinary.api.update(public_id, transformation=transformation)
+    def apply_rounded_corners(image_url, width, height):
+
+        transformations=[
+                        {'gravity': "face", 'height': height, 'width': width, 'crop': "thumb"},
+                        {'radius': "max"},
+                        {'fetch_format': "auto"}
+                        ]
+        
+        transformed_image = uploader.upload(image_url, transformation=transformations)
+        return transformed_image
 
     @staticmethod
     def improve_photo(public_id: str):
