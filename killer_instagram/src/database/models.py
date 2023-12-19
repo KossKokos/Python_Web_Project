@@ -37,7 +37,7 @@ class User(Base):
         return str(self.id)
 
 
-  = Table(
+image_m2m_tag = Table(
     "image_m2m_tag",
     Base.metadata,
     Column("id", Integer, primary_key=True),
