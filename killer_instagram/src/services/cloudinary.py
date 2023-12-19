@@ -87,24 +87,25 @@ class CloudImage:
     #     return uploader.upload(public_id, **options)
 
     @staticmethod
-    def remove_object(public_id, prompt):
-        transformation = f"e_gen_remove:prompt_{prompt}"
-        return cloudinary.api.update(public_id, transformation=transformation)
+    def remove_object(image_url, prompt):
+        # existing_image = cloudinary.api.resource(public_id)
+        transformed_image = cloudinary.utils.cloudinary_url(
+            image_url,
+            transformation=[{'effect': f"remove_object:prompt_{prompt}"}],
+            secure=True
+            )[0]
+        print(transformed_image)
+        # result = cloudinary.uploader.upload(transformed_image, public_id=public_id, overwrite=True)
+        
+        return cloudinary.uploader.upload(transformed_image, overwrite=True)
 
     @staticmethod
     def apply_rounded_corners(public_id, width, height):
-        transformation = f"c_fill,g_face,w_{width},h_{height}/r_max/f_png"
-        return cloudinary.api.update(public_id, transformation=transformation)
-
-    @staticmethod
-    def improve_photo(public_id: str):
-        width = 100
-        height = 150
-        crop = "fill"
-
-        url, options = cloudinary_url(public_id, width=width, height=height, crop=crop)
-
-        print(f"Transformed URL: {url}")
-
+        url, options = cloudinary_url(public_id, width=width, height=height)
         return cloudinary.uploader.upload(url, **options)
 
+    @staticmethod
+    def improve_photo(image_url: str, mode: str, blend: int):
+        url, options = cloudinary_url(image_url, mode=mode, blend=blend)
+        print(f"Transformed URL: {url}")
+        return cloudinary.uploader.upload(url, **options, overwrite=True)

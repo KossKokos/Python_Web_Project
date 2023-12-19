@@ -202,8 +202,9 @@ async def remove_object_from_image(
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    transformed_image = CloudImage.remove_object(image.public_id, prompt)
+    transformed_image = CloudImage.remove_object(image.image_url, prompt)
     transformation_url = transformed_image['secure_url']
+    print(transformation_url)
 
     # Check if QR code URL exists in the database
     qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
@@ -241,7 +242,6 @@ async def apply_rounded_corners_to_image(
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    # url на  public_id 
     transformed_image = CloudImage.apply_rounded_corners(image.public_id, width, height)
     transformation_url = transformed_image['secure_url']
 
@@ -258,14 +258,17 @@ async def apply_rounded_corners_to_image(
 @router.post("/improve_photo/{image_id}")
 async def improve_photo(
     image_id: int,
+    mode: str = 'outdoot',
+    blend: int = 100,
     db: Session = Depends(get_db),
 ):
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    transformed_image = CloudImage.improve_photo(image.image_url)
+    transformed_image = CloudImage.improve_photo(image.image_url, mode, blend)
     transformation_url = transformed_image['secure_url']
+    print(f"Transformed URL: {transformation_url}")
 
     # Save transformed image information to the database
     await repository_images.create_transformed_image_link(
@@ -275,7 +278,7 @@ async def improve_photo(
         qr_code_url="",  # You can generate a QR code here if needed
     )
 
-    return ImageStatusUpdate(done=True)
+    return {"done": True, "transformation_url": transformation_url, "qr_code_url": None}
 
 
 @router.post("/get_link_qrcode/{image_id}")
