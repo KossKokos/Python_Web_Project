@@ -91,7 +91,8 @@ async def upload_image(
         )
 
 
-@router.delete("/{image_id}")
+@router.delete("/{image_id}",
+               dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def delete_image(
     image_id: int,
     current_user: User = Depends(service_auth.get_current_user),
@@ -115,8 +116,9 @@ async def delete_image(
         if image is None:
             raise HTTPException(status_code=404, detail="Image not found")
 
-        # Check if the current user has permission to delete the image
-        if image.user_id != current_user.id and not current_user.is_admin:
+        # Check if the current user has permission to delete the image (Any user can delete own image)
+        #if image.user_id != current_user.id and not current_user.is_admin:
+        if image.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="Permission denied")
         
         # Delete image from /images
