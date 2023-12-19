@@ -52,8 +52,8 @@ async def upload_image(
 
     try:
         file_extension = file.filename.split(".")[-1]
-        publick_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
-        cloudinary_response = CloudImage.upload_image(file=file.file, public_id=publick_id)
+        public_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
+        cloudinary_response = CloudImage.upload_image(file=file.file, public_id=public_id)
 
         # Save image information to the database
         image: Image = await repository_images.create_image(
