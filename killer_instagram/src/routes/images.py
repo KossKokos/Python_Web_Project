@@ -7,7 +7,7 @@ from src.repository import images as repository_images
 from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 from src.database.models import User, TransformedImageLink
-from src.database.database import db_transaction
+from src.database.db import db_transaction
 from src.repository.tags import get_existing_tags
 from typing import List
 from src.services.cloudinary import CloudImage
