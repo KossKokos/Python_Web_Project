@@ -179,9 +179,9 @@ async def create_image(
     db.add(image)
     db.commit()
     db.refresh(image)
-
     for tag_name in tags:
-        tag = await get_or_create_tag(db, tag_name="Test")
+        #tag = await get_or_create_tag(db, tag_name="Test")
+        tag = await get_or_create_tag(db, tag_name)
         await add_tag_to_image(db, image_id=image.id, tag_id=tag.id)
 
     # return image
