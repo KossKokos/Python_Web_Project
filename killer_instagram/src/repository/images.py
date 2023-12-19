@@ -184,8 +184,8 @@ async def create_image(
         tag = await get_or_create_tag(db, tag_name)
         await add_tag_to_image(db, image_id=image.id, tag_id=tag.id)
 
-    # return image
-    return ImageResponse.from_db_model(image)
+    return image
+
 
 async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
     created_image = db.query(Image).filter(Image.user_id==user_id, Image.id==image_id).first()
@@ -219,6 +219,7 @@ async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
 
 #     return ImageResponse.from_db_model(image)
 
+
 async def update_image_cloudinary_info(
     db: Session,
     image_id: int,
@@ -251,6 +252,7 @@ async def update_image_cloudinary_info(
             detail=f"Error updating Cloudinary info for image: {str(e)}",
         )
 
+
 async def get_tags_count_for_image(db: Session, image_id: int) -> int:
     """
     Get the count of tags for an image.
@@ -278,6 +280,7 @@ async def check_tags_limit(db: Session, image_id: int) -> bool:
     """
     tags_count = await get_tags_count_for_image(db, image_id)
     return tags_count < 5
+
 
 async def create_transformed_image_link(
     db: Session,
