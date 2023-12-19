@@ -212,8 +212,15 @@ async def remove_object_from_image(
     image_id: int,
     prompt: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(service_auth.get_current_user),
 ):
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+
+    # Check if the current user has permission to update the image
+    if image.user_id != current_user.id and current_user.role != "admin":
+                raise HTTPException(status_code=403, detail="Permission denied")
+
+    #image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
@@ -245,14 +252,21 @@ async def remove_object_from_image(
     return ImageStatusUpdate(**response_data)
 
 
-@router.post("/apply_rounded_corners/{image_id}")
+@router.post("/apply_rounded_corners/{image_id}",
+             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def apply_rounded_corners_to_image(
     image_id: int,
     width: int,
     height: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(service_auth.get_current_user)
 ):
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+
+    # Check if the current user has permission to update the image
+    if image.user_id != current_user.id and current_user.role != "admin":
+                raise HTTPException(status_code=403, detail="Permission denied")
+
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
@@ -270,12 +284,19 @@ async def apply_rounded_corners_to_image(
 
     return ImageStatusUpdate(done=True)
 
-@router.post("/improve_photo/{image_id}")
+@router.post("/improve_photo/{image_id}",
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def improve_photo(
     image_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(service_auth.get_current_user)
 ):
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+
+    # Check if the current user has permission to update the image
+    if image.user_id != current_user.id and current_user.role != "admin":
+                raise HTTPException(status_code=403, detail="Permission denied")
+
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
@@ -293,10 +314,12 @@ async def improve_photo(
     return ImageStatusUpdate(done=True)
 
 
-@router.post("/get_link_qrcode/{image_id}")
+@router.post("/get_link_qrcode/{image_id}",
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def get_transformed_image_link_qrcode(
     image_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(service_auth.get_current_user)
 ):
     """
     Generate a link for the transformed image and QR code.
