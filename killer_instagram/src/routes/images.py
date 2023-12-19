@@ -116,9 +116,9 @@ async def delete_image(
         if image is None:
             raise HTTPException(status_code=404, detail="Image not found")
 
-        # Check if the current user has permission to delete the image (Any user can delete own image)
-        #if image.user_id != current_user.id and not current_user.is_admin:
-        if image.user_id != current_user.id:
+        # Check if the current user has permission to delete the image
+        if image.user_id != current_user.id and current_user.role != "admin":
+        
             raise HTTPException(status_code=403, detail="Permission denied")
         
         # Delete image from /images
@@ -133,7 +133,8 @@ async def delete_image(
     return {"message": "Image deleted successfully"}
 
 
-@router.put("/{image_id}")
+@router.put("/{image_id}",
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def update_image_description(
     image_id: int,
     description_update: str,
@@ -163,7 +164,7 @@ async def update_image_description(
 
         # Check if the current user has permission to update the image
         if image.user_id != current_user.id and current_user.role != "admin":
-            raise HTTPException(status_code=403, detail="Permission denied")
+                    raise HTTPException(status_code=403, detail="Permission denied")
 
         # Update image description in the database
         image = await repository_images.update_image_in_db(db=db, image_id=image_id, new_description=description_update)
@@ -181,8 +182,11 @@ async def update_image_description(
         )
 
 
-@router.get("/{image_id}", response_model=ImageResponse)
-async def get_image(image_id: int, db: Session = Depends(get_db)):
+@router.get("/{image_id}", response_model=ImageResponse,
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+async def get_image(image_id: int, 
+                    db: Session = Depends(get_db),
+                    current_user: User = Depends(service_auth.get_current_user)):
     """
     Get an image by its ID.
 
@@ -202,7 +206,8 @@ async def get_image(image_id: int, db: Session = Depends(get_db)):
 
     return image_response
 
-@router.post("/remove_object/{image_id}")
+@router.post("/remove_object/{image_id}",
+             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
 async def remove_object_from_image(
     image_id: int,
     prompt: str,
