@@ -306,6 +306,8 @@ async def create_transformed_image_link(
         # If a record already exists for the given image_id, update it
         existing_link.transformation_url = transformation_url
         existing_link.qr_code_url = qr_code_url
+        db.commit()
+        return existing_link
     else:
         # If no record exists, create a new one
         new_link = TransformedImageLink(
@@ -314,13 +316,15 @@ async def create_transformed_image_link(
             qr_code_url=qr_code_url,
         )
         db.add(new_link)
+        db.commit()
+        return new_link
 
-    db.commit()
+    #db.commit()
 
-    response_data = {
-        "done": True,
-        "transformation_url": transformation_url,
-        "qr_code_url": qr_code_url,
-    }
+    # response_data = {
+    #     "done": True,
+    #     "transformation_url": transformation_url,
+    #     "qr_code_url": qr_code_url,
+    # }
 
-    return ImageStatusUpdate(**response_data)
+    #return ImageStatusUpdate(**response_data)

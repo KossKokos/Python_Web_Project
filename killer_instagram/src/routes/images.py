@@ -271,18 +271,21 @@ async def apply_rounded_corners_to_image(
         raise HTTPException(status_code=404, detail="Image not found")
 
     # url на  public_id 
-    transformed_image = CloudImage.apply_rounded_corners(image.public_id, width, height)
+    #transformed_image = CloudImage.apply_rounded_corners(image.public_id, width, height)
+    transformed_image = CloudImage.apply_rounded_corners(image.image_url, width, height)
     transformation_url = transformed_image['secure_url']
 
     # Save transformed image information to the database
-    await repository_images.create_transformed_image_link(
+    result: TransformedImageLink = await repository_images.create_transformed_image_link(
         db=db,
         image_id=image.id,
         transformation_url=transformation_url,
         qr_code_url="",  # You can generate a QR code here if needed
     )
+    
+    message = {"cereated": "done", "id": result.id, "transformation_url": result.transformation_url, "qr_code_url": result.qr_code_url }
+    return message
 
-    return ImageStatusUpdate(done=True)
 
 @router.post("/improve_photo/{image_id}",
             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
