@@ -6,7 +6,7 @@ from src.services.auth import service_auth
 from src.repository import images as repository_images
 from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
-from src.database.models import User, TransformedImageLink
+from src.database.models import User, TransformedImageLink, Image
 from src.database.database import db_transaction
 from src.repository.tags import get_existing_tags
 from typing import List
@@ -57,7 +57,7 @@ async def upload_image(
         cloudinary_response = CloudImage.upload_image(file=file.file, public_id=publick_id)
 
         # Save image information to the database
-        image = await repository_images.create_image(
+        image: Image = await repository_images.create_image(
             db=db,
             user_id=current_user.id,
             description=description,
@@ -91,7 +91,7 @@ async def upload_image(
         )
 
 
-@router.delete("/{image_id}")
+@router.delete("/{image_id}", status_code=status.HTTP_202_ACCEPTED)
 async def delete_image(
     image_id: int,
     current_user: User = Depends(service_auth.get_current_user),
@@ -131,7 +131,7 @@ async def delete_image(
     return {"message": "Image deleted successfully"}
 
 
-@router.put("/{image_id}")
+@router.put("/{image_id}", status_code=status.HTTP_202_ACCEPTED)
 async def update_image_description(
     image_id: int,
     description_update: str,
@@ -179,7 +179,7 @@ async def update_image_description(
         )
 
 
-@router.get("/{image_id}", response_model=ImageResponse)
+@router.get("/{image_id}", response_model=ImageResponse, status_code=status.HTTP_200_OK)
 async def get_image(image_id: int, db: Session = Depends(get_db)):
     """
     Get an image by its ID.
@@ -200,7 +200,7 @@ async def get_image(image_id: int, db: Session = Depends(get_db)):
 
     return image_response
 
-@router.post("/remove_object/{image_id}")
+@router.post("/remove_object/{image_id}", status_code=status.HTTP_202_ACCEPTED)
 async def remove_object_from_image(
     image_id: int,
     prompt: str,
