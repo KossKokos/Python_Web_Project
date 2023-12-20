@@ -7,6 +7,7 @@ from src.repository import images as repository_images
 from src.database.models import User, Image, Rating
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
+from src.services.banned import banned_dependency
 from src.schemas import rating as schema_rating
 from src.repository import rating as repository_rating
 
@@ -17,7 +18,9 @@ allowd_operation_admin_moderator = RoleRights(["admin", "moderator"])
 
 
 @router.post("/", status_code=status.HTTP_200_OK, 
-             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)],
+             dependencies=[Depends(logout_dependency), 
+                           Depends(allowd_operation_any_user),
+                           Depends(banned_dependency)],
              response_model=schema_rating.RatingResponse
              )
 async def rate_image(body: schema_rating.RatingModel, 
@@ -45,7 +48,9 @@ async def rate_image(body: schema_rating.RatingModel,
 
 
 @router.get("/{rating_id}", status_code=200,
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_admin_moderator)])
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_admin_moderator),
+                          Depends(banned_dependency)])
 async def get_rating(rating_id: int, 
                      current_user: User = Depends(service_auth.get_current_user),
                      db: Session = Depends(get_db)):
@@ -66,7 +71,9 @@ async def get_rating(rating_id: int,
 
 
 @router.delete("/{rating_id}", status_code=200,
-               dependencies=[Depends(logout_dependency), Depends(allowd_operation_admin_moderator)])
+               dependencies=[Depends(logout_dependency), 
+                             Depends(allowd_operation_admin_moderator),
+                             Depends(banned_dependency)])
 async def delete_rating(rating_id: int, 
                         current_user: User = Depends(service_auth.get_current_user),
                         db: Session = Depends(get_db)):

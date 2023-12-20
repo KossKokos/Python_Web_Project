@@ -20,9 +20,9 @@ from src.database.models import User
 router = APIRouter(prefix='/auth', tags=['auth'])
 security = HTTPBearer()
 
-allowd_operation_change_role= RoleRights(["admin"])
+allowd_operation_by_admin= RoleRights(["admin"])
 allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
-allowd_operation_delete_user = RoleRights(["admin"])
+#allowd_operation_delete_user = RoleRights(["admin"])
 
 @router.post('/signup', status_code=status.HTTP_201_CREATED)
 async def signup(body: schema_users.UserModel, 
@@ -213,7 +213,7 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
 
 @router.patch('/change_role/{user_id}', response_model=UserResponce, 
                                         status_code=status.HTTP_202_ACCEPTED,
-                                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_change_role)])
+                                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_by_admin)])
 async def change_user_role(
     user_id: int,
     body: UserRoleUpdate,
@@ -273,32 +273,3 @@ async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
     return {"message": f"User {current_user.email} successfully logged out"}
 
 
-@router.delete('/delete_user/{user_id}',
-               status_code=status.HTTP_200_OK,
-               dependencies=[Depends(logout_dependency), Depends(allowd_operation_delete_user)])
-async def delete_user(user_id: int, current_user: User = Depends(service_auth.get_current_user),
-                      db: Session = Depends(get_db)):
-    """
-    The delete_user function allows an admin to delete a user.
-
-    :param user_id: int: ID of the user to be deleted
-    :param current_user: User: Get the current user from the database
-    :param db: Session: Database session
-    :return: HTTP status 204 (No Content)
-    """
- 
-    user = await repository_users.get_user_by_id(user_id, db)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-      
-    if current_user.id != 1 and user.role == "admin":
-        raise HTTPException(status_code=403, detail="Permission denied. Only supreadmin can delede other admin.")
-    
-    if current_user.id == user_id:
-        raise HTTPException(status_code=403, detail="Permission denied. Cannot delete own account.")
-    
-    if user.id == 1:
-        raise HTTPException(status_code=403, detail="Permission denied. Superadmin user cannot be deleted.")
-
-    await repository_users.delete_user(user_id, db)
-    return {"message": f"User {current_user.email} successfully deleted"}
