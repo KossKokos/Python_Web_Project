@@ -37,12 +37,12 @@ from src.repository.logout import token_to_blacklist
 from src.services.auth import service_auth
 from src.services.cloudinary import CloudImage
 from src.conf.config import settings
-from src.schemas.users import UserResponce, BannedUserUpdate
+from src.schemas.users import UserResponce
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
 from src.services.banned import banned_dependency
 from src.services.cloudinary import CloudImage
-
+# BannedUserUpdate
 router = APIRouter(prefix='/users', tags=['users'])
 security = HTTPBearer()
 

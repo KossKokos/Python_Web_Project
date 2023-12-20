@@ -58,7 +58,6 @@ async def update_comment(comment_to_update: Comment, body: schema_comments.Comme
     :param body: schema_comments.CommentUpdate: Pass the new comment to be updated in the database
     :param db: Session: Access the database
     :return: A comment object
-    :doc-author: Trelent
     """
     comment_to_update.comment = body.new_comment
     comment_to_update.updated_at = datetime.now()
@@ -66,3 +65,37 @@ async def update_comment(comment_to_update: Comment, body: schema_comments.Comme
     db.refresh(comment_to_update)
     return comment_to_update
 
+
+async def delete_comment(comment_to_delete: Comment, db: Session) -> Comment:
+    """
+    The delete_comment function deletes a comment from the database.
+        Args:
+            comment_to_delete (Comment): The Comment object to delete.
+            db (Session): The database session to use for deleting the Comment object.
+        Returns:
+            A deleted Comment object.
+    
+    :param comment_to_delete: Comment: Pass in the comment object that we want to delete
+    :param db: Session: Pass the database session to the function
+    :return: The deleted comment
+    """
+    db.delete(comment_to_delete)
+    db.commit()
+    return comment_to_delete
+
+
+async def get_comment(comment_id: int, db: Session) -> Comment | None:
+    """
+    The get_comment function returns a comment object from the database.
+        Args:
+            comment_id (int): The id of the comment to be returned.
+            db (Session): A session object for interacting with the database.
+        Returns:
+            Comment | None: If a matching comment is found, it will be returned as an instance of Comment; otherwise, None.
+    
+    :param comment_id: int: Specify the comment id of the comment we want to retrieve from our database
+    :param db: Session: Pass in the database session
+    :return: A comment object or none
+    """
+    comment: Comment = db.query(Comment).filter(Comment.id==comment_id).first()
+    return comment
