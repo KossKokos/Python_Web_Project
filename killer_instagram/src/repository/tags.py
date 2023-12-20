@@ -36,3 +36,8 @@ async def get_existing_tags(db: Session) -> list:
     """
     existing_tags: List[Tag] = db.query(Tag.tag).distinct().all()
     return [tag.tag for tag in existing_tags]
+
+
+async def get_tag_by_name(tag: str, db: Session) -> Tag | None:
+    exist_tag = db.query(Tag).filter(Tag.tag==tag).first()
+    return exist_tag

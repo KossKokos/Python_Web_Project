@@ -2,10 +2,10 @@ import os
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from src.database.models import Image, Tag, TransformedImageLink, User, image_m2m_tag
-from src.repository.tags import get_or_create_tag
+from src.repository import tags as repository_tags
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 
-from typing import List
+from typing import List, Optional
 
 async def create_image_with_tags(
     db: Session,
@@ -181,7 +181,7 @@ async def create_image(
     db.refresh(image)
     for tag_name in tags:
         #tag = await get_or_create_tag(db, tag_name="Test")
-        tag = await get_or_create_tag(db, tag_name)
+        tag = await repository_tags.get_or_create_tag(db, tag_name)
         await add_tag_to_image(db, image_id=image.id, tag_id=tag.id)
 
     return image
@@ -328,3 +328,28 @@ async def create_transformed_image_link(
     # }
 
     #return ImageStatusUpdate(**response_data)
+    
+async def find_images_by_keyword(user_id: int, db: Session, 
+                      keyword: str, 
+                      date: bool = True) -> List[Optional[Image]]:
+    if date:
+        images = db.query(Image).filter(Image.user_id==user_id, Image.description.like(f"%{keyword}%"))\
+                 .order_by(Image.upload_time.desc()).all()
+        return images
+    else:
+        images = db.query(Image).filter(Image.user_id==user_id, Image.description.like(f"%{keyword}%")).all()
+        return images
+    
+
+async def find_images_by_tag(user_id: int, db: Session, 
+                      tag_name: str,
+                      date: bool = False) -> List[Optional[Image]]:
+    tag = await repository_tags.get_tag_by_name(tag=tag_name, db=db)
+    if tag is None:
+        return None
+    if date:
+        images = db.query(Image).filter(Image.user_id==user_id, Image.tags.contains(tag)).order_by(Image.upload_time.desc()).all()
+        return images
+    else:
+        images = db.query(Image).filter(Image.user_id==user_id, Image.tags.contains(tag)).all()
+        return images
