@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text 
 
-from src.routes import auth, users, images
+from src.routes import auth, users, images, rating
 from src.middlewares.middlewares import (
     startup_event, 
     ban_ips_middleware, 
@@ -23,7 +23,7 @@ app = FastAPI(debug=True)
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(images.router, prefix='/api')
-
+app.include_router(rating.router, prefix='/api')
 # app.add_event_handler("startup", startup_event)
 
 # app.middleware("http")(ban_ips_middleware)
