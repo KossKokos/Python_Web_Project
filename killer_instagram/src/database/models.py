@@ -84,13 +84,8 @@ class Comment(Base):
     comment = Column(String(150), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     updated_at = Column('updated_at', DateTime, nullable=True)
-<<<<<<< HEAD
-    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'))
-    user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'))
-=======
     image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'), nullable=False)
     user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'), nullable=False)
->>>>>>> e14a18700640e20f4fafcfd82087f1046393c3c4
     image = relationship('Image', back_populates='comments')
     user = relationship('User', back_populates='comments')
 
