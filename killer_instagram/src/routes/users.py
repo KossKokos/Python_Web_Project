@@ -1,43 +1,13 @@
-"""
-1.	Створити маршрут для профіля користувача за його унікальним юзернеймом. Повинна повертатися вся інформація про користувача. Імя, коли зарєсттрований, кількість завантажених фото тощо
-2.	Користувач може редагувати інформацію про себе, та бачити інформацію про себе. Це мають бути різні маршрути з профілем користувача. Профіль для всіх користувачів, а інформація для себе - це те що можно редагувати
-3.	Адміністратор може робити користувачів неактивними (банити). Неактивні користувачі не можуть заходити в застосунок
-
-User ID: A unique identifier for each user in the system.
-Username: The name chosen by the user for identification.
-Email: User's email address, often used for communication and login purposes.
-Password (encrypted): A securely stored and encrypted password for user authentication.
-Full Name: User's complete name (first name, last name, etc.).
-Date of Birth: User's date of birth.
-Profile Picture URL: URL pointing to the user's profile picture or avatar.
-Bio/Description: A brief description or biography of the user.
-Location: User's geographical location (city, state, country).
-Contact Information: Phone number, address, etc. (if applicable and provided).
-Social Media Links: Links to the user's social media profiles (Facebook, Twitter, LinkedIn, etc.).
-Preferences/Settings: User-specific preferences or settings related to the application or service.
-Account Creation Date: Date and time when the user account was created.
-Last Login Date: Date and time of the user's last login to the system.
-Account Status: Indicates whether the account is active, suspended, or deleted.
-Role/Permissions: User's role or level of access within the system (e.g., admin, regular user, moderator).
-
-"""
-
-
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Security
-from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-import cloudinary
-from cloudinary import uploader
-from src.repository.logout import token_to_blacklist
 
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
-from src.repository.logout import token_to_blacklist
 from src.services.auth import service_auth
 from src.services.cloudinary import CloudImage
-from src.conf.config import settings
-from src.schemas.users import UserResponce, BannedUserUpdate
+from src.schemas.users import UserResponce
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
 from src.services.banned import banned_dependency
@@ -228,5 +198,3 @@ async def update_unbanned_status(user_id:str,
 
     await repository_users.update_unbanned_status(user, db)
     return user
-
-    
