@@ -76,9 +76,10 @@ def test_upload_picture_ok(client, get_access_token, monkeypatch):
         monkeypatch.setattr("src.routes.images.CloudImage.add_tags", mock_cloud_service)
         
         test_description = "test_description"
-        tags = ["hello", "world"]
+        tag1 = "hello" 
+        tag2 = "world"
         image_responce = client.post(
-            f"/api/images?description={test_description}&tags={tags}",
+            f"/api/images?description={test_description}&tags={tag1}&tags={tag2}",
             headers={"Authorization": f"Bearer {access_token}"},
             files={"file": ("python_logo.jpg", file, "python_logo.jpg")}
         )
@@ -92,7 +93,7 @@ def test_upload_picture_ok(client, get_access_token, monkeypatch):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_get_image_ok(client):
+def test_get_image_ok(client, get_access_token):
     image_id = 1
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
@@ -107,7 +108,7 @@ def test_get_image_ok(client):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_get_image_not_found(client):
+def test_get_image_not_found(client, get_access_token):
     image_id = 123
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
@@ -132,12 +133,75 @@ def test_update_image_description(client, get_access_token, monkeypatch):
             f"api/images/{image_id}?description_update={new_description}",
             headers={"Authorization": f"Bearer {get_access_token}"}            
         )
-        assert image_responce.status_code == 202, image_responce.text
+        assert image_responce.status_code == 200, image_responce.text
         data = image_responce.json()
         assert data["description"] == new_description
         assert data["id"] == image_id
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_find_images_by_keyword_ok(client, get_access_token):
+    image_id = 1
+    keyword = "new"
+    date = True
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        response = client.get(
+            f"api/images/find/by_keyword?keyword={keyword}&date={date}",
+            headers={"Authorization": f"Bearer {get_access_token}"}
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        image = data[0]
+        assert image['id'] == image_id
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_find_images_by_keyword_not_found(client, get_access_token):
+    keyword = "1"
+    date = True
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        response = client.get(
+            f"api/images/find/by_keyword?keyword={keyword}&date={date}",
+            headers={"Authorization": f"Bearer {get_access_token}"}
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data == []
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_find_images_by_tag_ok(client, get_access_token):
+    image_id = 1
+    tag = "hello"
+    date = True
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        response = client.get(
+            f"api/images/find/by_tag?tag={tag}&date={date}",
+            headers={"Authorization": f"Bearer {get_access_token}"}
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        image = data[0]
+        assert image['id'] == image_id
+
+
+
+def test_find_images_by_tag_not_found(client, get_access_token):
+    image_id = 1
+    tag = "1"
+    date = True
+    with patch.object(service_auth, 'r_cashe') as r_mock:
+        r_mock.get.return_value = None
+        response = client.get(
+            f"api/images/find/by_tag?tag={tag}&date={date}",
+            headers={"Authorization": f"Bearer {get_access_token}"}
+        )
+        assert response.status_code == 404, response.text
+        data = response.json()
+        assert data["detail"] == "There are no images with this tag"
 
 def test_delete_image(client, get_access_token, monkeypatch):
     image_id = 1

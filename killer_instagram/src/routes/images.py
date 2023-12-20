@@ -397,6 +397,19 @@ async def find_images_by_keyword(keyword: str,
                       date: Optional[bool] = False,
                       current_user: User = Depends(service_auth.get_current_user),
                       db: Session = Depends(get_db)):
+    """
+    The find_images_by_keyword function finds images by keyword.
+        Args:
+            keyword (str): The search term to find images by.
+            date (bool, optional): Whether or not to sort the results by date. Defaults to False.
+            current_user (User): a user who is currently making a request
+
+    :param keyword: str: Search for images by keyword
+    :param date: Optional[bool]: Determine whether the images should be sorted by date or not
+    :param current_user: User: Get the user id of the current logged in user
+    :param db: Session: Pass the database session to the repository layer
+    :return: A list of images
+    """
     images = await repository_images.find_images_by_keyword(keyword=keyword, 
                                                 date=date, 
                                                 user_id=current_user.id, db=db)
@@ -408,6 +421,17 @@ async def find_images_by_tag(tag: str,
                       date: Optional[bool] = False,
                       current_user: User = Depends(service_auth.get_current_user),
                       db: Session = Depends(get_db)):
+    """
+    The find_images_by_tag function returns a list of images that have the specified tag.
+        The user must be logged in to use this function.
+        If no images are found, an HTTPException is raised with status code 404 and detail message
+    
+    :param tag: str: Get the tag name from the request
+    :param date: Optional[bool]: Determine if the user wants to sort by date or not
+    :param current_user: User: Get the user_id of the current user
+    :param db: Session: Get the database session, which is used to query the database
+    :return: A list of images
+    """
     images = await repository_images.find_images_by_tag(tag_name=tag, 
                                                 date=date, 
                                                 user_id=current_user.id, db=db)
