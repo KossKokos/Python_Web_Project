@@ -64,7 +64,29 @@ async def get_all_usernames(current_user: User = Depends(service_auth.get_curren
     usernames = await repository_users.return_all_users(db)
     return usernames
 
-@router.post('/{username}', 
+
+@router.get('/me', response_model=UserResponce,
+            status_code=status.HTTP_200_OK,
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation),
+                          Depends(banned_dependency)]
+            )
+async def read_users_me(current_user: User = Depends(service_auth.get_current_user)):
+    """
+    The read_users_me function returns the current user's information.
+
+        get:
+          summary: Returns the current user's information.
+          description: Returns the current user's information based on their JWT token in their request header.
+          responses: HTTP status code 200 indicates success! In this case, it means we successfully returned a User
+    
+    :param current_user: User: Get the user object of the current user
+    :return: The user object
+    """
+    return current_user
+
+
+@router.get('/{username}', 
             status_code=status.HTTP_200_OK,
             dependencies=[Depends(logout_dependency), 
                           Depends(allowd_operation),
@@ -105,27 +127,6 @@ async def get_user_profile(username,
     return user_profile
 
 
-@router.get('/me', response_model=UserResponce,
-            status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), 
-                          Depends(allowd_operation),
-                          Depends(banned_dependency)]
-            )
-async def read_users_me(current_user: User = Depends(service_auth.get_current_user)):
-    """
-    The read_users_me function returns the current user's information.
-
-        get:
-          summary: Returns the current user's information.
-          description: Returns the current user's information based on their JWT token in their request header.
-          responses: HTTP status code 200 indicates success! In this case, it means we successfully returned a User
-    
-    :param current_user: User: Get the user object of the current user
-    :return: The user object
-    """
-    return current_user
-
-
 @router.patch('/avatar', response_model=UserResponce, 
                         status_code=status.HTTP_200_OK,
                         dependencies=[Depends(logout_dependency), 
@@ -163,7 +164,7 @@ async def update_avatar_user(file: UploadFile = File(),
                                       Depends(allowd_operation)],
                         )
 async def update_banned_status(user_id:str,
-                                body: BannedUserUpdate, 
+                                # body: BannedUserUpdate, 
                                 current_user: User = Depends(service_auth.get_current_user),
                                 db: Session = Depends(get_db)):
     """
@@ -189,9 +190,10 @@ async def update_banned_status(user_id:str,
     if user.id == 1:
         raise HTTPException(status_code=403, detail="Permission denied.Superadmin status cannot be changed.")
 
-    if body.banned in [True, False]:
-        await repository_users.update_banned_status(user, body, db)
-        return user
-    else:
-        raise HTTPException(status_code=400, detail="Invalid role provided")
+    # якщо юзера забанили, то його токен має йти в блек ліст, і при логіні треба перевіряти чи статус забанений, якщо так то він не може залогінитись
+    # if body.banned in [True, False]:
+    await repository_users.update_banned_status(user, db)
+    return user
+    # else:
+    #     raise HTTPException(status_code=400, detail="Invalid role provided")
     
