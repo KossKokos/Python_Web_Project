@@ -1,15 +1,19 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Query, Body
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+
 from src.database.db import get_db
 from src.services.auth import service_auth
-from src.repository import images as repository_images, rating as repository_rating
-from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
+from src.repository import (
+    images as repository_images, 
+    rating as repository_rating, 
+    tags as repository_tags
+)
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 from src.database.models import User, TransformedImageLink, Image
 from src.database.db import db_transaction
-from src.repository.tags import get_existing_tags
-from typing import List
 from src.services.cloudinary import CloudImage
 from src.services.qr_code import get_qr_code_url, generate_qr_code
 from src.services.roles import RoleRights
@@ -73,7 +77,7 @@ async def upload_image(
         #     await repository_images.add_tag_to_image(db=db, image_id=image.id, tag_id=tag.id)
 
         # Add new tags to the existing tags list
-        existing_tags = await get_existing_tags(db)
+        existing_tags = await repository_tags.get_existing_tags(db)
         for tag_name in tags:
             if tag_name not in existing_tags:
                 existing_tags.append(tag_name)
@@ -335,7 +339,7 @@ async def get_transformed_image_link_qrcode(
         dict: The response containing the transformation URL and QR code URL.
     """
     # Get image from db
-    image = await get_image_by_id(db=db, image_id=image_id)
+    image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
@@ -354,7 +358,7 @@ async def get_transformed_image_link_qrcode(
 
     # Save QR code URL to db
     qr_code_url = qr_code_data["url"]
-    await create_transformed_image_link(db=db, image_id=image_id, transformation_url=transformation_url, qr_code_url=qr_code_url)
+    await repository_images.create_transformed_image_link(db=db, image_id=image_id, transformation_url=transformation_url, qr_code_url=qr_code_url)
 
     response_data = {
         "transformation_url": transformation_url,
@@ -386,3 +390,27 @@ async def get_average_rating(image_id: int,
     if average_rating is None:
         return HTTPException(status_code=404, detail="Image has no rating yet")
     return average_rating
+
+
+@router.get('/find/by_keyword', status_code=200)
+async def find_images_by_keyword(keyword: str, 
+                      date: Optional[bool] = False,
+                      current_user: User = Depends(service_auth.get_current_user),
+                      db: Session = Depends(get_db)):
+    images = await repository_images.find_images_by_keyword(keyword=keyword, 
+                                                date=date, 
+                                                user_id=current_user.id, db=db)
+    return images
+    
+
+@router.get('/find/by_tag', status_code=200)
+async def find_images_by_tag(tag: str, 
+                      date: Optional[bool] = False,
+                      current_user: User = Depends(service_auth.get_current_user),
+                      db: Session = Depends(get_db)):
+    images = await repository_images.find_images_by_tag(tag_name=tag, 
+                                                date=date, 
+                                                user_id=current_user.id, db=db)
+    if images is None:
+        raise HTTPException(status_code=404, detail="There are no images with this tag")
+    return images

@@ -1,7 +1,11 @@
+from typing import List, Optional
+
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from src.database.models import User
+from src.database.models import User, Image, Tag
 from src.schemas.users import UserModel, UserRoleUpdate
+from src.repository import tags as repository_tags
 
 
 async def create_user(body: UserModel, db: Session) -> User:
