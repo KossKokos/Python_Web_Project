@@ -331,7 +331,18 @@ async def create_transformed_image_link(
     
 async def find_images_by_keyword(user_id: int, db: Session, 
                       keyword: str, 
-                      date: bool = True) -> List[Optional[Image]]:
+                      date: bool = False) -> List[Optional[Image]]:
+    """
+    The find_images_by_keyword function takes in a user_id, db, keyword and date.
+    The function returns a list of images that match the keyword. If date is True, 
+    the images are ordered by upload time.
+    
+    :param user_id: int: Specify the user_id of the user who is trying to search for images
+    :param db: Session: Pass in the database session object
+    :param keyword: str: Specify the keyword to search for in the database
+    :param date: bool: Determine whether the images should be returned in order of upload time
+    :return: A list of images that match the keyword
+    """
     if date:
         images = db.query(Image).filter(Image.user_id==user_id, Image.description.like(f"%{keyword}%"))\
                  .order_by(Image.upload_time.desc()).all()
@@ -344,6 +355,18 @@ async def find_images_by_keyword(user_id: int, db: Session,
 async def find_images_by_tag(user_id: int, db: Session, 
                       tag_name: str,
                       date: bool = False) -> List[Optional[Image]]:
+    """
+    The find_images_by_tag function is used to find all images that have a certain tag.
+        The function takes in the user_id, db, and tag_name as parameters.
+        It also has an optional parameter date which defaults to False. 
+        If date is True then the images are ordered by upload time from most recent to least recent.
+    
+    :param user_id: int: Identify the user
+    :param db: Session: Pass the database session to the function
+    :param tag_name: str: Specify the tag name to search for
+    :param date: bool: Determine if the images should be returned in order of upload time
+    :return: A list of images
+    """
     tag = await repository_tags.get_tag_by_name(tag=tag_name, db=db)
     if tag is None:
         return None
