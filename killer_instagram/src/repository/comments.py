@@ -1,25 +1,11 @@
 from datetime import datetime
 
 from sqlalchemy.orm import Session
-<<<<<<< HEAD
-from src.database.models import Comment
-from src.schemas.comment_models import CommentCreate
-=======
->>>>>>> e14a18700640e20f4fafcfd82087f1046393c3c4
 
 from src.database.models import Comment
 from src.schemas import comments as schema_comments
 
 
-<<<<<<< HEAD
-    def create_comment(self, comment: CommentCreate, user_id: int) -> Comment:
-        db_comment = Comment(**comment.dict())
-        db_comment.user_id = user_id
-        self.db.add(db_comment)
-        self.db.commit()
-        self.db.refresh(db_comment)
-        return db_comment
-=======
 async def add_new_comment(body: schema_comments.CommentModel, user_id: int, db: Session) -> Comment:
     """
     The add_new_comment function creates a new comment in the database.
@@ -80,15 +66,3 @@ async def update_comment(comment_to_update: Comment, body: schema_comments.Comme
     db.refresh(comment_to_update)
     return comment_to_update
 
-
-# class CommentRepository:
-#     def __init__(self, db: Session):
-#         self.db = db
-
-#     def create_comment(self, comment: CommentCreate):
-#         db_comment = CommentDB(**comment.dict())
-#         self.db.add(db_comment)
-#         self.db.commit()
-#         self.db.refresh(db_comment)
-#         return db_comment
->>>>>>> e14a18700640e20f4fafcfd82087f1046393c3c4
