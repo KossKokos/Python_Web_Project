@@ -15,6 +15,8 @@ class UserResponce(BaseModel):
     password: str = 'password'
     avatar: Optional[str] = None
     role: str = "role"
+    banned: Optional[bool] = None
+
 
     class Config:
         orm_mode = True
@@ -26,3 +28,6 @@ class ChangePassword(BaseModel):
 
 class UserRoleUpdate(BaseModel):
     role: str = "role"
+
+class BannedUserUpdate(BaseModel):
+    banned: bool = False
