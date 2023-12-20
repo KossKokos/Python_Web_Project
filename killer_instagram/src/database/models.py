@@ -14,17 +14,17 @@ class User(Base):
     __tablename__ = "users_table"
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(50), nullable=False)
+    username = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password = Column(String(100), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
-    images = relationship('Image', back_populates='user')
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
     role = Column(String(20), nullable=False, default='user')
+    banned = Column(Boolean, default=False)
     blacklisted_token = relationship('BlacklistedToken', uselist=False, back_populates='user')
-    
+    images = relationship('Image', back_populates='user')
 
     __table_args__ = (
         CheckConstraint(

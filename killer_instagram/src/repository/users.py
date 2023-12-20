@@ -36,6 +36,18 @@ async def get_user_by_email(email: str, db: Session) -> User | None:
     return db.query(User).filter(User.email==email).first()
 
 
+async def get_user_by_username(username: str, db: Session) -> User | None:
+    """
+    The get_user_by_email function takes in an email and a database session,
+    and returns the user with that email if it exists. If no such user exists,
+    it returns None.
+
+    :param email: str: Specify the email of the user we want to get from our database
+    :param db: Session: Pass the database session to the function
+    :return: A user object or none if the user is not found
+    """
+    return db.query(User).filter(User.username==username).first()
+
 async def update_token(user: User, refresh_token: str, db: Session) -> None:
     """
     The update_token function updates the refresh_token for a user in the database.
@@ -155,3 +167,6 @@ async def delete_user(user_id: int, db: Session) -> None:
         db.delete(user)
         db.commit()
     return None 
+
+async def get_imagis_quantity(current_user:User, db: Session):
+    return 10
