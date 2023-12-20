@@ -5,16 +5,20 @@ from typing import Optional
 from src.database.db import get_db
 from src.database.models import User, Image
 
+from comment_models import get_comment_by_id, delete_comment_from_db
+
 
 class CommentBase(BaseModel):
     comment: str = Field(min_length=5)
 
 
 class CommentCreate(CommentBase):
-    # user_id: int  
-    image_id: int  
-    # parent_comment_id: Optional[int] = None  
 
+    # user_id: int  
+
+    image_id: int  
+    
+    # parent_comment_id: Optional[int] = None  
 
     async def check_user_and_image_existence(self):
         user_exists = check_user_existence(self.user_id)
@@ -25,6 +29,24 @@ class CommentCreate(CommentBase):
 
         if not image_exists:
             raise ValueError("Image does not exist")
+        
+
+class User(BaseModel):
+    username: str
+    is_admin: bool
+    is_moderator: bool
+
+
+async def delete_comment(comment_id: int, current_user: User):
+    comment = get_comment_by_id(comment_id) 
+
+    if current_user.is_admin or current_user.is_moderator:
+        delete_comment_from_db(comment_id)
+        return "Comment deleted successfully"
+    else:
+        return "You don't have permission to delete this comment"
+
+
 
 
 def check_user_existence(user_id: int) -> bool:
