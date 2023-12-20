@@ -12,6 +12,7 @@ from src.schemas import users as schema_users, token as schema_token
 from src.services.email import send_email, send_reset_password_email
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
+from src.services.banned import banned_dependency
 from src.schemas.email import RequestEmail
 from src.schemas.users import ChangePassword, UserRoleUpdate, UserResponce
 from src.database.models import User
@@ -55,8 +56,12 @@ async def signup(body: schema_users.UserModel,
     return {'user': user, 'detail': 'User successfully created, please check your email for verification'}
 
 
-@router.post("/login", response_model=schema_token.TokenResponce, status_code=status.HTTP_202_ACCEPTED)
-async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/login", 
+             response_model=schema_token.TokenResponce, 
+             status_code=status.HTTP_202_ACCEPTED)
+async def login(body: OAuth2PasswordRequestForm = Depends(), 
+                db: Session = Depends(get_db)):
+               
     """
     The login function is used to authenticate a user.
     
@@ -64,9 +69,12 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     :param db: Session: Access the database
     :return: A dictionary
     """
+    
     user = await repository_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email")
+    if user.banned == True:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"User {user.email} banned. Please contact your administrator!")
     if not user.confirmed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email is not confirmed')
     if not service_auth.verify_password(body.password, user.password):
@@ -77,8 +85,9 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router.get('/refresh_token', response_model=schema_token.TokenResponce,
-            dependencies=[Depends(logout_dependency),Depends(allowd_operation_any_user)])
+@router.get('/refresh_token', 
+            response_model=schema_token.TokenResponce,
+            dependencies=[Depends(logout_dependency),Depends(allowd_operation_any_user), Depends(banned_dependency)])
         
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security),
                         current_user: User= Depends(service_auth.get_current_user), db: Session = Depends(get_db)):
@@ -242,7 +251,8 @@ async def change_user_role(
 
 @router.get('/logout',
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_any_user)])
 async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db), 
                 current_user: User = Depends(service_auth.get_current_user)):
     """

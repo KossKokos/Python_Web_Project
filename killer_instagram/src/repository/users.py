@@ -7,7 +7,6 @@ from src.database.models import User, Image, Tag
 from src.schemas.users import UserModel, UserRoleUpdate
 from src.repository import tags as repository_tags
 
-
 async def create_user(body: UserModel, db: Session) -> User:
     """
     The create_user function creates a new user in the database.
@@ -172,5 +171,59 @@ async def delete_user(user_id: int, db: Session) -> None:
         db.commit()
     return None 
 
-async def get_imagis_quantity(current_user:User, db: Session):
-    return 10
+async def get_imagis_quantity(user:User, db: Session):
+    """
+    The get_imagis_quantity function returns the number of images that a user has uploaded to the database.
+        Args:
+            user (User): The User object whose image quantity is being requested.
+            db (Session): The database session used for querying and updating data in the database.
+    
+    :param user:User: Get the user_id of the user
+    :param db: Session: Connect to the database and query it
+    :return: The quantity of images that a user has uploaded to the database
+    """
+    all_images = db.query(Image).filter_by(user_id = user.id).all()
+    quantity_of_loaded_images = len(all_images)
+    return quantity_of_loaded_images
+
+async def return_all_users(db: Session) -> dict:
+    """
+    The return_all_users function retrieves all usernames from the User table.
+
+    :param db: Session: Database session
+    :return: A dictionary containing all usernames from the User table
+    """
+    users = db.query(User).all()
+    usernames = {f"username(id: {user.id})": user.username for user in users}
+    return usernames
+
+async def update_banned_status(user: User, db: Session):
+    """
+    The update_banned_status function updates the banned status of a user for bunned.
+        
+    
+    :param user: User: Get the user that is being updated
+    :param body: BannedUserUpdate: Update the user's banned status
+    :param db: Session: Access the database
+    :return: A user object
+    """
+    user.banned = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+async def update_unbanned_status(user: User, db: Session):
+    """
+    The update_гтbanned_status function updates the banned status of a user for unbanned.
+        
+    
+    :param user: User: Get the user that is being updated
+    :param body: BannedUserUpdate: Update the user's banned status
+    :param db: Session: Access the database
+    :return: A user object
+    """
+    user.banned = False
+    db.commit()
+    db.refresh(user)
+    return user
+

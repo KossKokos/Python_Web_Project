@@ -18,6 +18,7 @@ from src.services.cloudinary import CloudImage
 from src.services.qr_code import get_qr_code_url, generate_qr_code
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
+from src.services.banned import banned_dependency
 
 router = APIRouter(prefix='/images', tags=['images'])
 
@@ -27,7 +28,9 @@ allowd_operation_delete_user = RoleRights(["admin"])
 
 @router.post("/", 
              status_code=status.HTTP_200_OK,
-             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)],
+             dependencies=[Depends(logout_dependency), 
+                           Depends(allowd_operation_any_user),
+                           Depends(banned_dependency)],
              response_model=ImageResponse)
 async def upload_image(
     description: str,
@@ -70,12 +73,6 @@ async def upload_image(
             file_extension=file_extension,
         )
 
-        # Add tags to the image
-        # for tag_name in tags:
-        #     tag = await repository_images.get_or_create_tag(db=db, tag_name=tag_name)
-        #     print(73, tag.id)
-        #     await repository_images.add_tag_to_image(db=db, image_id=image.id, tag_id=tag.id)
-
         # Add new tags to the existing tags list
         existing_tags = await repository_tags.get_existing_tags(db)
         for tag_name in tags:
@@ -96,7 +93,10 @@ async def upload_image(
 
 
 @router.delete("/{image_id}",
-               dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)], status_code=status.HTTP_202_ACCEPTED)
+               dependencies=[Depends(logout_dependency), 
+                             Depends(allowd_operation_any_user),
+                             Depends(banned_dependency)], 
+                             status_code=status.HTTP_202_ACCEPTED)
 async def delete_image(
     image_id: int,
     current_user: User = Depends(service_auth.get_current_user),
@@ -122,12 +122,8 @@ async def delete_image(
 
         # Check if the current user has permission to delete the image
         if image.user_id != current_user.id and current_user.role != "admin":
-        
             raise HTTPException(status_code=403, detail="Permission denied")
         
-        # Delete image from /images
-        # await repository_images.delete_image_local(db=db, image=image)
-
         # Delete image from Cloudinary
         CloudImage.delete_image(public_id=image.public_id)
 
@@ -138,7 +134,9 @@ async def delete_image(
 
 
 @router.put("/{image_id}",
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_any_user),
+                          Depends(banned_dependency)])
 async def update_image_description(
     image_id: int,
     description_update: str,
@@ -187,7 +185,10 @@ async def update_image_description(
 
 
 @router.get("/{image_id}", response_model=ImageResponse,
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)], status_code=status.HTTP_200_OK)
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_any_user),
+                          Depends(banned_dependency)], 
+                          status_code=status.HTTP_200_OK)
 async def get_image(image_id: int, 
                     db: Session = Depends(get_db),
                     current_user: User = Depends(service_auth.get_current_user)):
@@ -211,7 +212,10 @@ async def get_image(image_id: int,
     return image_response
 
 @router.post("/remove_object/{image_id}",
-             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)], status_code=status.HTTP_202_ACCEPTED)
+             dependencies=[Depends(logout_dependency), 
+                           Depends(allowd_operation_any_user),
+                           Depends(banned_dependency)], 
+                           status_code=status.HTTP_202_ACCEPTED)
 async def remove_object_from_image(
     image_id: int,
     prompt: str,
@@ -257,7 +261,9 @@ async def remove_object_from_image(
 
 
 @router.post("/apply_rounded_corners/{image_id}",
-             dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+             dependencies=[Depends(logout_dependency), 
+                           Depends(allowd_operation_any_user),
+                           Depends(banned_dependency)])
 async def apply_rounded_corners_to_image(
     image_id: int,
     width: int,
@@ -292,7 +298,9 @@ async def apply_rounded_corners_to_image(
 
 
 @router.post("/improve_photo/{image_id}",
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_any_user),
+                          Depends(banned_dependency)])
 async def improve_photo(
     image_id: int,
     db: Session = Depends(get_db),
@@ -322,7 +330,9 @@ async def improve_photo(
 
 
 @router.post("/get_link_qrcode/{image_id}",
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_any_user),
+                          Depends(banned_dependency)])
 async def get_transformed_image_link_qrcode(
     image_id: int,
     db: Session = Depends(get_db),
