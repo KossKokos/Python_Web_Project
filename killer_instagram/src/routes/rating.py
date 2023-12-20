@@ -1,12 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from src.database.db import get_db
 from src.services.auth import service_auth
 from src.repository import images as repository_images
 from src.database.models import User, Image, Rating
-from src.database.db import db_transaction
-from typing import List
 from src.services.roles import RoleRights
 from src.services.logout import logout_dependency
 from src.schemas import rating as schema_rating
@@ -41,41 +39,47 @@ async def rate_image(body: schema_rating.RatingModel,
     if image.user_id == current_user.id:
         raise HTTPException(status_code=403, detail="You can't rate your own image")
     new_rating = await repository_rating.creare_rating(image_id=body.image_id, user_id=current_user.id, rating=body.rating, db=db)
-    if new_rating is True:
+    if new_rating is False:
         raise HTTPException(status_code=403, detail="You have already rated this image before")
     return new_rating
 
 
-@router.get("/{image_id}", status_code=200,
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
-async def get_rating(image_id: int, 
+@router.get("/{rating_id}", status_code=200,
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_admin_moderator)])
+async def get_rating(rating_id: int, 
                      current_user: User = Depends(service_auth.get_current_user),
                      db: Session = Depends(get_db)):
     """
-    The get_rating function returns the average rating for a given image.
-        The function takes an image_id as input and returns the average rating of that image.
-        If no ratings have been made yet, it will return a message saying so.
+    The get_rating function returns a rating object given the id of the rating.
+        The function takes in an integer as its argument and returns a JSON object containing 
+        information about that particular rating.
     
-    :param image_id: int: Get the image id from the request
-    :param current_user: User: Get the user that is currently logged in
-    :param db: Session: Get the database session
-    :return: A dictionary with the message key
+    :param rating_id: int: Get the rating from the database
+    :param current_user: User: Get the user who is currently logged in
+    :param db: Session: Get a database session from the sessionlocal class
+    :return: A dictionary that contains the rating object
     """
-    image: Image = await repository_images.get_image_by_id(db=db, image_id=image_id)
-    if image is None:
-        raise HTTPException(status_code=404, detail="Image doesn't exist yet")
-    average_rating = await repository_rating.get_rating_for_image(image=image, db=db)
-    if average_rating is None:
-        return {"message": "This image doesn't have rating yet"} 
-    return average_rating
+    rating: Rating | None = await  repository_rating.get_rating_using_id(rating_id=rating_id, db=db)
+    if rating is None:
+        raise HTTPException(status_code=404, detail="Rating doesn't exist")
+    return {"Rating": rating}
 
 
 @router.delete("/{rating_id}", status_code=200,
-               dependencies=[Depends(logout_dependency), Depends(allowd_operation_admin_moderator)],)
-            #    response_model=schema_rating.RatingResponse)
+               dependencies=[Depends(logout_dependency), Depends(allowd_operation_admin_moderator)])
 async def delete_rating(rating_id: int, 
                         current_user: User = Depends(service_auth.get_current_user),
                         db: Session = Depends(get_db)):
+    """
+    The delete_rating function deletes a rating from the database.
+        The function takes in an integer representing the id of the rating to be deleted, 
+        and returns a dictionary containing information about which raiting was deleted.
+    
+    :param rating_id: int: Find the rating in the database
+    :param current_user: User: Get the user that is currently logged in
+    :param db: Session: Get the database session
+    :return: The deleted rating
+    """
     rating_to_delete: Rating = await repository_rating.delete_rating(rating_id=rating_id, db=db)
     if not rating_to_delete:
         raise HTTPException(status_code=404, detail="Rating not found")

@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.services.auth import service_auth
-from src.repository import images as repository_images
+from src.repository import images as repository_images, rating as repository_rating
 from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 from src.database.models import User, TransformedImageLink, Image
@@ -362,3 +362,27 @@ async def get_transformed_image_link_qrcode(
     }
 
     return response_data
+
+
+@router.get("/{image_id}/rating", status_code=200,
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+async def get_average_rating(image_id: int, 
+                     current_user: User = Depends(service_auth.get_current_user),
+                     db: Session = Depends(get_db)):
+    """
+    The get_rating function returns the average rating for a given image.
+        The function takes an image_id as input and returns the average rating of that image.
+        If no ratings have been made yet, it will return a message saying so.
+    
+    :param image_id: int: Get the image id from the request
+    :param current_user: User: Get the user that is currently logged in
+    :param db: Session: Get the database session
+    :return: A dictionary with the message key
+    """
+    image: Image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+    if image is None:
+        raise HTTPException(status_code=404, detail="Image doesn't exist yet")
+    average_rating = await repository_rating.get_average_rating_for_image(image=image, db=db)
+    if average_rating is None:
+        return {"message": "This image doesn't have rating yet"} 
+    return average_rating
