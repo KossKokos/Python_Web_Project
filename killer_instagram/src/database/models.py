@@ -24,6 +24,7 @@ class User(Base):
     confirmed = Column(Boolean, default=False)
     role = Column(String(20), nullable=False, default='user')
     blacklisted_token = relationship('BlacklistedToken', uselist=False, back_populates='user')
+    comments = relationship('Comment', back_populates='user')
     
 
     __table_args__ = (
@@ -80,9 +81,11 @@ class Comment(Base):
     id = Column(Integer, primary_key=True)
     comment = Column(String(150), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
-    updated_at = Column('updated_at', DateTime)
-    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'))
+    updated_at = Column('updated_at', DateTime, nullable=True)
+    image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'), nullable=False)
     image = relationship('Image', back_populates='comments')
+    user = relationship('User', back_populates='comments')
 
 
 class Tag(Base):
