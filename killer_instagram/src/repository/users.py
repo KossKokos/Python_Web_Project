@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session
 
-from src.database.models import Image, User
-from src.schemas.users import UserModel, UserRoleUpdate, BannedUserUpdate
-
+from src.database.models import Image, User, Tag
+from src.schemas.users import UserModel, UserRoleUpdate
 
 async def create_user(body: UserModel, db: Session) -> User:
     """

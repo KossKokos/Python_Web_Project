@@ -29,5 +29,3 @@ class ChangePassword(BaseModel):
 class UserRoleUpdate(BaseModel):
     role: str = "role"
 
-class BannedUserUpdate(BaseModel):
-    banned: bool = False
