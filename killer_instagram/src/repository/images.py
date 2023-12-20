@@ -75,6 +75,23 @@ async def get_image_by_id(db: Session, image_id: int) -> Image | None:
     return db.query(Image).filter(Image.id == image_id).first()
 
 
+async def get_image_by_id_user_id(image_id: int, user_id: int, db: Session) -> Image | None:
+    """
+    The get_image_by_id_user_id function returns an image object from the database if it exists.
+        Args:
+            image_id (int): The id of the image to be retrieved.
+            user_id (int): The id of the user who owns this image.
+            db (Session, required): SQLAlchemy Session instance.
+    
+    :param image_id: int: Filter the image by id
+    :param user_id: int: Ensure the user is only getting their own images
+    :param db: Session: Pass in the database session
+    :return: An image object or none
+    """
+    image = db.query(Image).filter(Image.id==image_id, Image.user_id==user_id).first()
+    return image
+
+
 async def update_image_in_db(db: Session, image_id: int, new_description: str) -> ImageResponse | None:
     """
     Update the description of an image.

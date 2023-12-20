@@ -7,13 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text 
 
-from src.routes import auth, users, images, rating
-from src.middlewares.middlewares import (
-    startup_event, 
-    ban_ips_middleware, 
-    limit_access_by_ip,
-    user_agent_ban_middleware
-)
+from src.routes import auth, users, images, rating, comments
+# from src.middlewares.middlewares import (
+#     startup_event, 
+#     ban_ips_middleware, 
+#     limit_access_by_ip,
+#     user_agent_ban_middleware
+# )
 from src.database.db import get_db
 
 

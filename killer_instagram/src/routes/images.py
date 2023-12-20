@@ -22,6 +22,7 @@ from src.services.banned import banned_dependency
 
 router = APIRouter(prefix='/images', tags=['images'])
 
+
 allowd_operation_admin= RoleRights(["admin"])
 allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
 allowd_operation_delete_user = RoleRights(["admin"])
@@ -354,14 +355,14 @@ async def get_transformed_image_link_qrcode(
         raise HTTPException(status_code=404, detail="Image not found")
 
     # Check if a transformed link exists in the database
-    transformed_link = await get_transformed_image_link(db=db, image_id=image_id)
-    if transformed_link:
-        transformation_url = transformed_link.transformation_url
-    else:
+    # transformed_link = await repository_images.get_transformed_image_link(db=db, image_id=image_id)
+    # if transformed_link:
+    #     transformation_url = transformed_link.transformation_url
+    # else:
         # If not found, generate a link for the transformed image
-        prompt = "your_prompt_here"  # Replace with your prompt
-        transformed_image = CloudImage.remove_object(image.public_id, prompt)
-        transformation_url = transformed_image['secure_url']
+    prompt = "your_prompt_here"  # Replace with your prompt
+    transformed_image = CloudImage.remove_object(image.public_id, prompt)
+    transformation_url = transformed_image['secure_url']
 
     # Generate a QR code for the transformation URL
     qr_code_data = generate_qr_code(transformation_url)
