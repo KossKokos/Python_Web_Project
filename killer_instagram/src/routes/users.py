@@ -23,14 +23,17 @@ Role/Permissions: User's role or level of access within the system (e.g., admin,
 """
 
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Security
+from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 import cloudinary
 from cloudinary import uploader
+from src.repository.logout import token_to_blacklist
 
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
+from src.repository.logout import token_to_blacklist
 from src.services.auth import service_auth
 from src.services.cloudinary import CloudImage
 from src.conf.config import settings
@@ -41,9 +44,10 @@ from src.services.banned import banned_dependency
 from src.services.cloudinary import CloudImage
 
 router = APIRouter(prefix='/users', tags=['users'])
+security = HTTPBearer()
 
 allowd_operation = RoleRights(["user", "moderator", "admin"])
-allowd_operation_admin = RoleRights(["admin"])
+allowd_operation_ban = RoleRights(["admin"])
 
 
 @router.get('/',
@@ -161,10 +165,10 @@ async def update_avatar_user(file: UploadFile = File(),
                         response_model=UserResponce, 
                         status_code=status.HTTP_200_OK,
                         dependencies=[Depends(logout_dependency), 
-                                      Depends(allowd_operation)],
+                                      Depends(allowd_operation_ban)],
                         )
 async def update_banned_status(user_id:str,
-                                # body: BannedUserUpdate, 
+                                credentials: HTTPAuthorizationCredentials = Security(security), 
                                 current_user: User = Depends(service_auth.get_current_user),
                                 db: Session = Depends(get_db)):
     """
@@ -180,20 +184,49 @@ async def update_banned_status(user_id:str,
     :return: The user object
     """
 
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Permission denied. Only admin can ban the user.")
     user = await repository_users.get_user_by_id(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if current_user.id == user_id:
+    if current_user.id == user.id:
         raise HTTPException(status_code=403, detail="Permission denied. User cannot change own banned status.")
     if user.id == 1:
         raise HTTPException(status_code=403, detail="Permission denied.Superadmin status cannot be changed.")
 
-    # якщо юзера забанили, то його токен має йти в блек ліст, і при логіні треба перевіряти чи статус забанений, якщо так то він не може залогінитись
-    # if body.banned in [True, False]:
     await repository_users.update_banned_status(user, db)
     return user
-    # else:
-    #     raise HTTPException(status_code=400, detail="Invalid role provided")
+
+@router.patch('/unban/{user_id}', 
+                        response_model=UserResponce, 
+                        status_code=status.HTTP_200_OK,
+                        dependencies=[Depends(logout_dependency), 
+                                      Depends(allowd_operation_ban)],
+                        )
+async def update_unbanned_status(user_id:str,
+                                credentials: HTTPAuthorizationCredentials = Security(security), 
+                                current_user: User = Depends(service_auth.get_current_user),
+                                db: Session = Depends(get_db)):
+    """
+    The update_banned_status function updates the banned status of a user.
+        Only admin can ban the user.
+        User cannot change own banned status.
+        Superadmin status cannot be changed.
+    
+    :param user_id:str: Get the user_id from the url
+    :param body: BannedUserUpdate: Get the banned status from the request body
+    :param current_user: User: Get the user who is currently logged in
+    :param db: Session: Access the database
+    :return: The user object
+    """
+
+    user = await repository_users.get_user_by_id(user_id, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if current_user.id == user.id:
+        raise HTTPException(status_code=403, detail="Permission denied. User cannot change own banned status.")
+    if user.id == 1:
+        raise HTTPException(status_code=403, detail="Permission denied.Superadmin status cannot be changed.")
+
+    await repository_users.update_unbanned_status(user, db)
+    return user
+
     

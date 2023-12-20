@@ -196,7 +196,7 @@ async def return_all_users(db: Session) -> dict:
 
 async def update_banned_status(user: User, db: Session):
     """
-    The update_banned_status function updates the banned status of a user.
+    The update_banned_status function updates the banned status of a user for bunned.
         
     
     :param user: User: Get the user that is being updated
@@ -205,6 +205,21 @@ async def update_banned_status(user: User, db: Session):
     :return: A user object
     """
     user.banned = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+async def update_unbanned_status(user: User, db: Session):
+    """
+    The update_гтbanned_status function updates the banned status of a user for unbanned.
+        
+    
+    :param user: User: Get the user that is being updated
+    :param body: BannedUserUpdate: Update the user's banned status
+    :param db: Session: Access the database
+    :return: A user object
+    """
+    user.banned = False
     db.commit()
     db.refresh(user)
     return user

@@ -59,7 +59,9 @@ async def signup(body: schema_users.UserModel,
 @router.post("/login", 
              response_model=schema_token.TokenResponce, 
              status_code=status.HTTP_202_ACCEPTED)
-async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(body: OAuth2PasswordRequestForm = Depends(), 
+                db: Session = Depends(get_db)):
+               
     """
     The login function is used to authenticate a user.
     
@@ -67,9 +69,12 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     :param db: Session: Access the database
     :return: A dictionary
     """
+    
     user = await repository_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email")
+    if user.banned == True:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"User {user.email} banned. Please contact your administrator!")
     if not user.confirmed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email is not confirmed')
     if not service_auth.verify_password(body.password, user.password):
@@ -246,7 +251,8 @@ async def change_user_role(
 
 @router.get('/logout',
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+            dependencies=[Depends(logout_dependency), 
+                          Depends(allowd_operation_any_user)])
 async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db), 
                 current_user: User = Depends(service_auth.get_current_user)):
     """
