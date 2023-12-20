@@ -384,5 +384,5 @@ async def get_average_rating(image_id: int,
         raise HTTPException(status_code=404, detail="Image doesn't exist yet")
     average_rating = await repository_rating.get_average_rating_for_image(image=image, db=db)
     if average_rating is None:
-        return {"message": "This image doesn't have rating yet"} 
+        return HTTPException(status_code=404, detail="Image has no rating yet")
     return average_rating
