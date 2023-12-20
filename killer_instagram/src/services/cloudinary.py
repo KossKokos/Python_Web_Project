@@ -2,6 +2,7 @@ import hashlib
 
 import cloudinary
 from cloudinary import api
+from cloudinary.api import resource, update
 from cloudinary import CloudinaryImage
 from cloudinary import uploader
 from cloudinary.utils import cloudinary_url
@@ -54,7 +55,7 @@ class CloudImage:
         src_url = cloudinary.CloudinaryImage(public_id) \
             .build_url(width=250, height=250, crop='fill', version=cloud.get('version'))
         return src_url
-    
+
     @staticmethod
     def delete_image(public_id: str):
         """
@@ -67,10 +68,7 @@ class CloudImage:
         """
         Оновлення опису зображення на Cloudinary.
         """
-        # print(f"Updating description on Cloudinary. Public ID: {public_id}, New Description: {new_description}")
         cloudinary.api.update(public_id, context=f"description={new_description}")
-        # print("Description updated on Cloudinary.")
-
 
     @staticmethod
     def add_tags(public_id: str, tags: List[str]):
@@ -80,32 +78,20 @@ class CloudImage:
         tags_str = ','.join(tags)
         cloudinary.api.update(public_id, tags=tags_str, resource_type='image')
 
-    # @staticmethod
-    # def remove_object(public_id, prompt):
-    #     transformation = f"e_gen_remove:prompt_{prompt}"
-    #     options = {"transformation": transformation}
-    #     return uploader.upload(public_id, **options)
+    @staticmethod
+    def remove_object(public_id, mode, prompt):
+        # e_gen_remove:prompt_Star
+        transformed_image_url = cloudinary_url(public_id, effect=f"gen_remove:prompt_{prompt}", secure=True)[0]
+        return cloudinary.uploader.upload(transformed_image_url)
 
     @staticmethod
-    def remove_object(image_url, prompt):
-        # existing_image = cloudinary.api.resource(public_id)
-        transformed_image = cloudinary.utils.cloudinary_url(
-            image_url,
-            transformation=[{'effect': f"remove_object:prompt_{prompt}"}],
-            secure=True
-            )[0]
-        print(transformed_image)
-        # result = cloudinary.uploader.upload(transformed_image, public_id=public_id, overwrite=True)
-        
-        return cloudinary.uploader.upload(transformed_image, overwrite=True)
+    def apply_rounded_corners(public_id, border, radius):
+        transformed_image_url = cloudinary_url(public_id, transformation=[{'border': border, 'radius': radius}], secure=True)[0]
+        print(f"Transformed @staticmethod URL: {transformed_image_url}")
+        return cloudinary.uploader.upload(transformed_image_url)
 
     @staticmethod
-    def apply_rounded_corners(public_id, width, height):
-        url, options = cloudinary_url(public_id, width=width, height=height)
-        return cloudinary.uploader.upload(url, **options)
-
-    @staticmethod
-    def improve_photo(image_url: str, mode: str, blend: int):
-        url, options = cloudinary_url(image_url, mode=mode, blend=blend)
-        print(f"Transformed URL: {url}")
-        return cloudinary.uploader.upload(url, **options, overwrite=True)
+    def improve_photo(public_id, mode, blend):
+        transformed_image_url = cloudinary_url(public_id, transformation=[{'mode': mode, 'blend': blend}], secure=True)[0]
+        print(f"Transformed @staticmethod URL: {transformed_image_url}")
+        return cloudinary.uploader.upload(transformed_image_url)

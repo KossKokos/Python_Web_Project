@@ -1,17 +1,19 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Query, Body
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.responses import StreamingResponse
+from io import BytesIO
 from sqlalchemy.orm import Session
 from src.database.db import get_db
 from src.services.auth import service_auth
 from src.repository import images as repository_images
-from src.repository.images import create_transformed_image_link, get_image_by_id, convert_db_model_to_response_model
+from src.repository.images import create_transformed_image_link, get_image_by_id
 from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 from src.database.models import User, TransformedImageLink
 from src.database.database import db_transaction
 from src.repository.tags import get_existing_tags
 from typing import List
 from src.services.cloudinary import CloudImage
-from src.services.qr_code import get_qr_code_url, generate_qr_code
+from src.services.qr_code import get_qr_code_url, generate_qr_code, generate_and_upload_qr_code
 
 router = APIRouter(prefix='/images', tags=['images'])
 
@@ -196,15 +198,16 @@ async def get_image(image_id: int, db: Session = Depends(get_db)):
 async def remove_object_from_image(
     image_id: int,
     prompt: str,
+    mode: str = "Star",
     db: Session = Depends(get_db),
 ):
+    # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    transformed_image = CloudImage.remove_object(image.image_url, prompt)
+    transformed_image = CloudImage.remove_object(image.public_id, mode, prompt)
     transformation_url = transformed_image['secure_url']
-    print(transformation_url)
 
     # Check if QR code URL exists in the database
     qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
@@ -234,16 +237,25 @@ async def remove_object_from_image(
 @router.post("/apply_rounded_corners/{image_id}")
 async def apply_rounded_corners_to_image(
     image_id: int,
-    width: int,
-    height: int,
+    border: str = "5px_solid_black",
+    radius: int = 50,
     db: Session = Depends(get_db),
 ):
+    # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    transformed_image = CloudImage.apply_rounded_corners(image.public_id, width, height)
+    transformed_image = CloudImage.apply_rounded_corners(image.public_id, border, radius)
     transformation_url = transformed_image['secure_url']
+
+    # Check if QR code URL exists in the database
+    qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
+
+    if qr_code_link:
+        qr_code_url = qr_code_link.qr_code_url
+    else:
+        qr_code_url = None
 
     # Save transformed image information to the database
     await repository_images.create_transformed_image_link(
@@ -253,7 +265,15 @@ async def apply_rounded_corners_to_image(
         qr_code_url="",  # You can generate a QR code here if needed
     )
 
-    return ImageStatusUpdate(done=True)
+    response_data = {
+        "done": True,
+        "transformation_url": transformation_url,
+        "qr_code_url": qr_code_url,
+    }
+
+    return ImageStatusUpdate(**response_data)
+
+    # return {"done": True, "transformation_url": transformation_url, "qr_code_url": None}
 
 @router.post("/improve_photo/{image_id}")
 async def improve_photo(
@@ -302,17 +322,22 @@ async def get_transformed_image_link_qrcode(
         raise HTTPException(status_code=404, detail="Image not found")
 
     # Check if a transformed link exists in the database
-    transformed_link = await get_transformed_image_link(db=db, image_id=image_id)
+    transformed_link = image.transformed_links
+    print(transformed_link)
+    # transformed_link = await get_transformed_image_link(db=db, image_id=image_id)
     if transformed_link:
-        transformation_url = transformed_link.transformation_url
+        transformation_url = transformed_link
     else:
         # If not found, generate a link for the transformed image
         prompt = "your_prompt_here"  # Replace with your prompt
         transformed_image = CloudImage.remove_object(image.public_id, prompt)
         transformation_url = transformed_image['secure_url']
 
+    print(transformation_url)
+
     # Generate a QR code for the transformation URL
     qr_code_data = generate_qr_code(transformation_url)
+    print(qr_code_data)
 
     # Save QR code URL to db
     qr_code_url = qr_code_data["url"]
@@ -324,3 +349,25 @@ async def get_transformed_image_link_qrcode(
     }
 
     return response_data
+
+
+@router.get("/get_qr_code_url/{image_id}")
+async def get_qr_code_url_for_image(
+    image_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get QR code URL for a given image ID.
+
+    Args:
+        image_id (int): The ID of the image.
+        db (Session): The database session.
+
+    Returns:
+        str: The QR code URL.
+    """
+    qr_code_url = await get_qr_code_url_by_image_id(db=db, image_id=image_id)
+    if not qr_code_url:
+        raise HTTPException(status_code=404, detail="QR code URL not found")
+
+    return {"qr_code_url": qr_code_url}

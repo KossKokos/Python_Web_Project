@@ -321,3 +321,37 @@ async def create_transformed_image_link(
     }
 
     return ImageStatusUpdate(**response_data)
+
+def get_transformation_url_by_image_id(db: Session, image_id: int) -> str:
+    """
+    Get the transformation URL for a given image ID from the database.
+
+    Args:
+        db (Session): The database session.
+        image_id (int): The ID of the image.
+
+    Returns:
+        str: The transformation URL or an empty string if not found.
+    """
+    # Query the TransformedImageLink table for the specified image_id
+    link = db.query(TransformedImageLink).filter_by(image_id=image_id).first()
+
+    # Return the transformation URL if found, otherwise return an empty string
+    return link.transformation_url if link else ""
+
+async def get_qr_code_url_by_image_id(db: Session, image_id: int) -> str:
+    """
+    Get the QR code URL for a given image ID from the database.
+
+    Args:
+        db (Session): The database session.
+        image_id (int): The ID of the image.
+
+    Returns:
+        str: The QR code URL or an empty string if not found.
+    """
+    # Query the TransformedImageLink table for the specified image_id
+    qr_code_link = db.query(TransformedImageLink).filter_by(image_id=image_id).first()
+
+    # Return the QR code URL if found, otherwise return an empty string
+    return qr_code_link.qr_code_url if qr_code_link else ""
