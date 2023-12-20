@@ -4,7 +4,6 @@ from typing import Optional
 
 from src.database.db import get_db
 from src.database.models import User, Image
-
 from comment_models import get_comment_by_id, delete_comment_from_db
 
 

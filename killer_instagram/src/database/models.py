@@ -19,6 +19,7 @@ class User(Base):
     password = Column(String(100), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
     images = relationship('Image', back_populates='user')
+    comments = relationship('Comment', back_populates='user')
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     confirmed = Column(Boolean, default=False)
@@ -80,9 +81,11 @@ class Comment(Base):
     id = Column(Integer, primary_key=True)
     comment = Column(String(150), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
-    updated_at = Column('updated_at', DateTime)
+    updated_at = Column('updated_at', DateTime, nullable=True)
     image_id = Column('image_id', ForeignKey('images_table.id', ondelete='CASCADE'))
+    user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'))
     image = relationship('Image', back_populates='comments')
+    user = relationship('User', back_populates='comments')
 
 
 class Tag(Base):
