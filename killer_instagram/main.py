@@ -23,7 +23,12 @@ app = FastAPI(debug=True)
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(images.router, prefix='/api')
+<<<<<<< HEAD
 app.include_router(comments.router, prefix='/api')
+=======
+app.include_router(comments.router, prefix="/api")
+
+>>>>>>> e14a18700640e20f4fafcfd82087f1046393c3c4
 # app.add_event_handler("startup", startup_event)
 
 # app.middleware("http")(ban_ips_middleware)

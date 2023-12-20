@@ -4,6 +4,7 @@
 # from fastapi import Request, HTTPException, status, Depends
 # from fastapi.responses import JSONResponse
 # from fastapi_limiter import FastAPILimiter
+<<<<<<< HEAD
 
 # import redis.asyncio as redis
 
@@ -19,6 +20,22 @@
 # Тут просто приклади, можете їх міняти як заманеться
 # """
 
+=======
+# import redis.asyncio as redis
+
+# from src.conf.config import settings
+
+# from fastapi.security import OAuth2PasswordBearer
+# from typing import Optional
+# from jose import JWTError, jwt
+# from database import SessionLocal
+# from routes.users import User
+
+# """
+# Тут просто приклади, можете їх міняти як заманеться
+# """
+
+>>>>>>> e14a18700640e20f4fafcfd82087f1046393c3c4
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 

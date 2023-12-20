@@ -5,6 +5,7 @@ from typing import Optional
 from src.database.db import get_db
 from src.database.models import User, Image
 
+from comment_models import PydanticUser 
 from comment_models import get_comment_by_id, delete_comment_from_db
 
 
@@ -31,13 +32,13 @@ class CommentCreate(CommentBase):
             raise ValueError("Image does not exist")
         
 
-class User(BaseModel):
+class PydanticUser(BaseModel):
     username: str
     is_admin: bool
     is_moderator: bool
 
 
-async def delete_comment(comment_id: int, current_user: User):
+async def delete_comment(comment_id: int, current_user: PydanticUser):
     comment = get_comment_by_id(comment_id) 
 
     if current_user.is_admin or current_user.is_moderator:

@@ -17,8 +17,12 @@ from src.services.logout import logout_dependency
 
 router = APIRouter(prefix='/images', tags=['images'])
 
+<<<<<<< HEAD
 image_id = 6 
 image = repository_images.get_image_by_id(image_id)
+=======
+
+>>>>>>> e14a18700640e20f4fafcfd82087f1046393c3c4
 
 allowd_operation_admin= RoleRights(["admin"])
 allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
