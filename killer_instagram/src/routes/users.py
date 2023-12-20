@@ -1,4 +1,29 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File
+"""
+1.	Створити маршрут для профіля користувача за його унікальним юзернеймом. Повинна повертатися вся інформація про користувача. Імя, коли зарєсттрований, кількість завантажених фото тощо
+2.	Користувач може редагувати інформацію про себе, та бачити інформацію про себе. Це мають бути різні маршрути з профілем користувача. Профіль для всіх користувачів, а інформація для себе - це те що можно редагувати
+3.	Адміністратор може робити користувачів неактивними (банити). Неактивні користувачі не можуть заходити в застосунок
+
+User ID: A unique identifier for each user in the system.
+Username: The name chosen by the user for identification.
+Email: User's email address, often used for communication and login purposes.
+Password (encrypted): A securely stored and encrypted password for user authentication.
+Full Name: User's complete name (first name, last name, etc.).
+Date of Birth: User's date of birth.
+Profile Picture URL: URL pointing to the user's profile picture or avatar.
+Bio/Description: A brief description or biography of the user.
+Location: User's geographical location (city, state, country).
+Contact Information: Phone number, address, etc. (if applicable and provided).
+Social Media Links: Links to the user's social media profiles (Facebook, Twitter, LinkedIn, etc.).
+Preferences/Settings: User-specific preferences or settings related to the application or service.
+Account Creation Date: Date and time when the user account was created.
+Last Login Date: Date and time of the user's last login to the system.
+Account Status: Indicates whether the account is active, suspended, or deleted.
+Role/Permissions: User's role or level of access within the system (e.g., admin, regular user, moderator).
+
+"""
+
+
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary
 import cloudinary.uploader
@@ -17,6 +42,35 @@ from src.services.cloudinary import CloudImage
 router = APIRouter(prefix='/users', tags=['users'])
 
 allowd_operation_get = RoleRights(["user", "moderator", "admin"])
+
+
+@router.post('/{username}', 
+            status_code=status.HTTP_200_OK,
+            dependencies=[Depends(logout_dependency), Depends(allowd_operation_get)],
+            description = "Any User")
+async def get_user_profile(username, current_user: User = Depends(service_auth.get_current_user),
+                           db: Session = Depends(get_db)):
+    user = await repository_users.get_user_by_username(username, db)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'User with username: {username} not found.')
+    
+    quantity_of_loaded_images: int = await repository_users.get_imagis_quantity(user, db)
+
+    user_profile = {
+                    "user id": user.id,
+                    "username":user.username,
+                    "email": user.email,
+                    "registrated at":user.created_at,
+                    "banned": user.banned,
+                    "user role":user.role,
+                    "avatar URL": user.avatar,
+                    
+                    "quantity_of_loaded_images": quantity_of_loaded_images
+                    }
+
+    return user_profile
+
 
 
 @router.get('/me', response_model=UserResponce,

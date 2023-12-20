@@ -24,7 +24,10 @@ allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
 allowd_operation_delete_user = RoleRights(["admin"])
 
 @router.post('/signup', status_code=status.HTTP_201_CREATED)
-async def signup(body: schema_users.UserModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
+async def signup(body: schema_users.UserModel, 
+                 background_tasks: BackgroundTasks, 
+                 request: Request, 
+                 db: Session = Depends(get_db)):
     """
     The signup function creates a new user in the database.
         It also sends an email to the user's email address for verification purposes.
@@ -36,9 +39,16 @@ async def signup(body: schema_users.UserModel, background_tasks: BackgroundTasks
     :param db: Session: Get the database session,
     :return: A dictionary
     """
-    exist_user = await repository_users.get_user_by_email(body.email, db)
-    if exist_user:
+    exist_user_with_email: User = await repository_users.get_user_by_email(body.email, db)
+
+    if exist_user_with_email:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'User with email: {body.email} already exists')
+    
+    exist_user_with_username: User = await repository_users.get_user_by_username(body.username, db)
+    
+    if exist_user_with_username:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail= f'User with name: {body.username} already exists')
+    
     body.password = service_auth.get_password_hash(body.password)
     user = await repository_users.create_user(body, db)
     background_tasks.add_task(send_email, user.email, user.username, request.base_url)
