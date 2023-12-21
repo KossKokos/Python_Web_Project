@@ -255,6 +255,16 @@ async def remove_object_from_image(
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    The remove_object_from_image function removes an object from the image.
+    
+    :param image_id: int: Fetch the image from the database
+    :param prompt: str: Specify the object to be removed from the image
+    :param current_user: User: Get the current user information
+    :param db: Session: Access the database
+    :param : Specify the object to be removed from the image
+    :return: ImageStatusUpdate model
+    """
     # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
 
@@ -313,7 +323,16 @@ async def apply_rounded_corners_to_image(
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Fetch the original image URL from the database
+    """
+    The apply_rounded_corners_to_image function applies rounded corners to an image.
+    
+    :param image_id: int: Get the image from the database
+    :param border: str: Specify the border color and thickness of the rounded corners
+    :param radius: int: Set the radius of the rounded corners
+    :param current_user: User: Check if the current user has permission to update the image
+    :param db: Session: Pass the database session to the function
+    :return: A json response like this:
+    """
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
 
     # Check if the current user has permission to update the image
@@ -370,6 +389,21 @@ async def improve_photo(
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    The improve_photo function takes an image_id, mode and blend as input.
+    It then checks if the current user has permission to update the image. If not, it raises a 403 error.
+    If there is no such image in the database, it raises a 404 error. 
+    Otherwise, it calls Cloudinary's improve_photo function with mode and blend parameters to transform the original photo into an improved one (e.g., outdoor or indoor). 
+    The transformed photo is saved in Cloudinary's cloud storage and its URL is returned back to us.
+    
+    :param image_id: int: Identify the image to be transformed
+    :param mode: str: Determine the type of transformation to be applied
+    :param blend: int: Specify the blending level of the image
+    :param current_user: User: Get the current user's information
+    :param db: Session: Pass the database session to the function
+    :param : Specify the mode of transformation
+    :return: json
+    """
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
 
     # Check if the current user has permission to update the image

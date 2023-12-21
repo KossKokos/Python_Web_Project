@@ -38,5 +38,12 @@ async def get_existing_tags(db: Session) -> list:
 
 
 async def get_tag_by_name(tag: str, db: Session) -> Tag | None:
+    """
+    The get_tag_by_name function returns a tag object from the database if it exists, otherwise None.
+    
+    :param tag: str: Query the database for a tag with that name
+    :param db: Session: Pass the database session to the function
+    :return: A tag object or none
+    """
     exist_tag = db.query(Tag).filter(Tag.tag==tag).first()
     return exist_tag
