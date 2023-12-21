@@ -3,7 +3,7 @@
 Застосунок "Instagram Killere" - інноваційна платформа для сбереження свытлин з безпечною аутентифікацією через JWT токени та різними ролями для користувачів.
 
 
-![Logo](https://github.com/Dishalex/Infinity/blob/dev/Documentation/logo.jpg)
+![Logo](https://github.com/KossKokos/Python_Web_Project/blob/readme/Instagram_killer/logo/image.png)
 
 
 
@@ -66,7 +66,12 @@
   -  у src\schemas знаходяться файли в яких моделі для видачі інформації, прийому від користувачів. Ви можете добавляти скільки завгодно моделів та файлів. 
   -  У src\services знаходяться файли: auth.py та email.py, в яких знаходяться класи для виконання операцій по аутентифікації, авторизації і надсилання емейл для підтвердження користувача або скидання паролю. Ви можете добаляти нові сервери, наприклад для роботи з cloudinaryю
   -  У src\templates знахоться темплейти для надсилання емейлів про підтвердження та зміни паролю.
-   
+
+
+## Command to run API: 
+  * uvicorn main:app --host localhost --port 8000 --reload
+  * py main.py (You must be in the Instagram_killer directory in the console)
+
 4) Файл .example.env є прикладом, які дані потрібно записувати. Для того, щоб запустити API, потрібно перейменувати його в .env та ввести свої дані.
 
 5) Файл docker-compose потрібен для запуску відразу двох баз даних: postgres та redis. Це полегшує роботу та збільшує продуктивність. Щоб запустити його, введіть в консолі команду "docker-compose up" або "docker-compose up -d", для того, щоб не бачити логування. Щоб зупинити, введіть в консолі команду "docker-compose down".
