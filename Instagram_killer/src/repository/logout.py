@@ -48,6 +48,14 @@ async def is_token_blacklisted(user_id, db: Session):
         return "Ready to write a new blacklist_token"
 
 async def remove_old_blacklisted_token(token: BlacklistedToken, db: Session):
+    """
+    The remove_old_blacklisted_token function removes old blacklisted tokens from the database.
+        
+    
+    :param token: BlacklistedToken: Pass the token to be removed from the blacklist
+    :param db: Session: Pass the database session to the function
+    :return: A string
+    """
     db.delete(token)
     db.commit()
     return "Old blacklist_token removed"

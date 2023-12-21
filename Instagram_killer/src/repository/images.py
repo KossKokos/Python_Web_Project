@@ -8,45 +8,6 @@ from src.repository import tags as repository_tags
 from src.schemas.images import ImageResponse, ImageStatusUpdate
 
 
-# async def create_image_with_tags(
-#     db: Session,
-#     user: User,
-#     description: str,
-#     tags: List[str],
-#     file_extension: str,
-# ) -> ImageResponse:
-#     """
-#     Create an image with tags, upload to Cloudinary, and store in the database.
-
-#     Args:
-#         db (Session): The database session.
-#         user (User): The user creating the image.
-#         description (str): The description for the image.
-#         tags (List[str]): The list of tags for the image.
-#         file_extension (str): The file extension of the image.
-
-#     Returns:
-#         ImageResponse: The created image.
-#     """
-#     image_path = f"images/{user.id}_{description}.{file_extension}"
-
-#     image = Image(user_id=user.id, description=description)
-#     db.add(image)
-#     db.commit()
-#     db.refresh(image)
-
-
-#     transformed_link = TransformedImageLink(
-#         image_id=image.id,
-#         transformation_url=cloudinary_response["secure_url"],
-#         qr_code_url=cloudinary_response["qr_code_url"],
-#     )
-#     db.add(transformed_link)
-#     db.commit()
-
-#     return ImageResponse.from_orm(image)
-
-
 async def add_tag_to_image(db: Session, image_id: int, tag_id: int):
     """
     Add a tag to an image in the database.
@@ -203,11 +164,6 @@ async def create_image(
 
     # return image
     return ImageResponse.from_db_model(image)
-
-
-async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
-    created_image = db.query(Image).filter(Image.user_id==user_id, Image.id==image_id).first()
-    return created_image
 
 
 async def update_image_cloudinary_info(

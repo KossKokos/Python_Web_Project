@@ -207,14 +207,13 @@ async def update_unbanned_status(user_id:str,
 async def delete_user(user_id: int, current_user: User = Depends(service_auth.get_current_user),
                       db: Session = Depends(get_db)):
     """
-    The delete_user function allows an admin to delete a user.
+        The delete_user function allows an admin to delete a user.
 
     :param user_id: int: ID of the user to be deleted
     :param current_user: User: Get the current user from the database
     :param db: Session: Database session
-    :return: HTTP status 204 (No Content)
+    :return: dict
     """
- 
     user = await repository_users.get_user_by_id(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -229,4 +228,4 @@ async def delete_user(user_id: int, current_user: User = Depends(service_auth.ge
         raise HTTPException(status_code=403, detail="Permission denied. Superadmin user cannot be deleted.")
 
     await repository_users.delete_user(user_id, db)
-    return {"message": f"User {current_user.email} successfully deleted"}
+    return {"message": f"User successfully deleted"}

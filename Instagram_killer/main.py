@@ -1,19 +1,12 @@
-import redis.asyncio as redis
 import uvicorn
 
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi_limiter import FastAPILimiter
-from fastapi.middleware.cors import CORSMiddleware
+
 from sqlalchemy.orm import Session
 from sqlalchemy import text 
 
 from src.routes import auth, users, images, rating, comments
-# from src.middlewares.middlewares import (
-#     startup_event, 
-#     ban_ips_middleware, 
-#     limit_access_by_ip,
-#     user_agent_ban_middleware
-# )
+
 from src.database.db import get_db
 
 
@@ -25,19 +18,7 @@ app.include_router(users.router, prefix='/api')
 app.include_router(images.router, prefix='/api')
 app.include_router(rating.router, prefix='/api')
 app.include_router(comments.router, prefix='/api')
-# app.add_event_handler("startup", startup_event)
 
-# app.middleware("http")(ban_ips_middleware)
-# app.middleware("http")(limit_access_by_ip)
-# app.middleware("http")(user_agent_ban_middleware)
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 
 @app.get("/")
 async def read_root():
@@ -48,9 +29,6 @@ async def read_root():
     """
     return {"message": "Hello World!"}
 
-# start server, main:app - name of the file and app - Fastapi, reload=True - for authomatical reload
-if __name__ == '__main__':
-    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
 
 @app.get("/api/healthchecker")
 def healthchecker(db: Session = Depends(get_db)):
@@ -75,3 +53,6 @@ def healthchecker(db: Session = Depends(get_db)):
         print(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Error connecting to the database")
+    
+if __name__ == '__main__':
+    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
