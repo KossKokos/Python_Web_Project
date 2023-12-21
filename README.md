@@ -2,7 +2,7 @@
 Instagram Killer
 ================
 
-1) Requirements:
+##1) Requirements:
   - python==3.10
   - alembic==1.10.2
   - babel==2.13.0
