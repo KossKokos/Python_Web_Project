@@ -1,4 +1,4 @@
-python==3.10.0
+python==3.10.13
 alembic==1.10.2
 babel==2.13.0
 bcrypt==4.0.1
