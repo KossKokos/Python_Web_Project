@@ -201,40 +201,13 @@ async def create_image(
         tag = await repository_tags.get_or_create_tag(db, tag_name)
         await add_tag_to_image(db, image_id=image.id, tag_id=tag.id)
 
-    return image
+    # return image
+    return ImageResponse.from_db_model(image)
 
 
 async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
     created_image = db.query(Image).filter(Image.user_id==user_id, Image.id==image_id).first()
     return created_image
-
-
-# async def delete_image_local(
-#     db: Session,
-#     image: Image
-# ) -> ImageResponse:
-#     """
-#     Delete an image and its corresponding file from the local storage.
-
-#     Args:
-#         db (Session): The database session.
-#         image (Image): The image to be deleted.
-
-#     Returns:
-#         ImageResponse: The deleted image.
-#     """
-
-#     # Отримання розширення файлу зображення
-#     file_extension = image.file_extension
-
-#     # Фізичне видалення файлу зображення
-#     image_path = f"images/{image.user_id}_{image.description}_original.{file_extension}"
-#     try:
-#         os.remove(image_path)
-#     except FileNotFoundError:
-#         pass  # Якщо файл вже видалено, ігноруємо помилку
-
-#     return ImageResponse.from_db_model(image)
 
 
 async def update_image_cloudinary_info(
@@ -333,18 +306,51 @@ async def create_transformed_image_link(
             qr_code_url=qr_code_url,
         )
         db.add(new_link)
-        db.commit()
-        return new_link
 
-    #db.commit()
+    db.commit()
 
-    # response_data = {
-    #     "done": True,
-    #     "transformation_url": transformation_url,
-    #     "qr_code_url": qr_code_url,
-    # }
+    response_data = {
+        "done": True,
+        "transformation_url": transformation_url,
+        "qr_code_url": qr_code_url,
+    }
 
     #return ImageStatusUpdate(**response_data)
+
+def get_transformation_url_by_image_id(db: Session, image_id: int) -> str:
+    """
+    Get the transformation URL for a given image ID from the database.
+
+    Args:
+        db (Session): The database session.
+        image_id (int): The ID of the image.
+
+    Returns:
+        str: The transformation URL or an empty string if not found.
+    """
+    # Query the TransformedImageLink table for the specified image_id
+    link = db.query(TransformedImageLink).filter_by(image_id=image_id).first()
+
+    # Return the transformation URL if found, otherwise return an empty string
+    return link.transformation_url if link else ""
+
+async def get_qr_code_url_by_image_id(db: Session, image_id: int) -> str:
+    """
+    Get the QR code URL for a given image ID from the database.
+
+    Args:
+        db (Session): The database session.
+        image_id (int): The ID of the image.
+
+    Returns:
+        str: The QR code URL or an empty string if not found.
+    """
+    # Query the TransformedImageLink table for the specified image_id
+    qr_code_link = db.query(TransformedImageLink).filter_by(image_id=image_id).first()
+
+    # Return the QR code URL if found, otherwise return an empty string
+    return qr_code_link.qr_code_url if qr_code_link else ""
+
     
 async def find_images_by_keyword(user_id: int, db: Session, 
                       keyword: str, 

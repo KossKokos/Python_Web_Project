@@ -10,6 +10,7 @@ Base = declarative_base()
 Змінюйте, де потрібно, робіть міграції і перевіряйте
 """
 
+
 class User(Base):
     __tablename__ = "users_table"
 
@@ -77,9 +78,10 @@ class TransformedImageLink(Base):
 
     image = relationship("Image", back_populates="transformed_links")
 
+
 class Comment(Base):
     __tablename__ = 'comments_table'
-    
+
     id = Column(Integer, primary_key=True)
     comment = Column(String(150), nullable=False)
     created_at = Column('created_at', DateTime, default=func.now())
@@ -92,7 +94,7 @@ class Comment(Base):
 
 class Tag(Base):
     __tablename__ = 'tags_table'
-    
+
     id = Column(Integer, primary_key=True)
     tag = Column(String(30), nullable=False, unique=True)
     images = relationship('Image', secondary='image_m2m_tag', back_populates='tags')
@@ -110,7 +112,7 @@ class Rating(Base):
 
 class BlacklistedToken(Base):
     __tablename__ = 'blacklisted_tokens'
-    
+
     id = Column(Integer, primary_key=True)
     blacklisted_token = Column(String(255), nullable=True)
     user_id = Column('user_id', ForeignKey('users_table.id', ondelete='CASCADE'), unique=True)
