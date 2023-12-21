@@ -4,7 +4,7 @@
 
 
 
-![Logo](https://github.com/KossKokos/Python_Web_Project/blob/readme/Instagram_killer/logo/image.png)
+![Logo](https://github.com/KossKokos/Python_Web_Project/blob/dev/Instagram_killer/logo/image.pngпше)
 
 
 
