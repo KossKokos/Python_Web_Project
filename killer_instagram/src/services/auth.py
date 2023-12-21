@@ -4,10 +4,11 @@ import pickle
 
 import redis.asyncio as redis
 from fastapi import Depends, HTTPException, status
-from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer  # Bearer token
-from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
 
 from src.repository import users as repository_auth
 from src.database.db import get_db

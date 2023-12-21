@@ -11,6 +11,15 @@ class RoleRights:
 
     async def __call__(self, request: Request,
                        current_user: User = Depends(service_auth.get_current_user)):
+        """
+        The __call__ function is a decorator that checks if the current user has one of the allowed roles.
+        If not, it raises an HTTPException with status code 403 and a detail message.
+
+        :param self: Represent the instance of the class
+        :param request: Request: Get the request object
+        :param current_user: User: Get the current user from the database
+        :return: A response object
+        """
 
         if current_user.role not in self.allowed_roles:
             raise HTTPException(

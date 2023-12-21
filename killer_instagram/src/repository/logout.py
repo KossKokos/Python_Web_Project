@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from src.database.models import BlacklistedToken 
 
+
 async def token_to_blacklist(access_token: str, user_id, db: Session):
     """
     The token_to_blacklist function takes in a token and adds it to the blacklist.

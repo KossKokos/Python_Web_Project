@@ -1,11 +1,12 @@
-import os
+from typing import List, Optional
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from src.database.models import Image, Tag, TransformedImageLink, User, image_m2m_tag
-from src.repository import tags as repository_tags
-from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
 
-from typing import List, Optional
+from src.database.models import Image,  TransformedImageLink, User, image_m2m_tag
+from src.repository import tags as repository_tags
+from src.schemas.images import ImageResponse, ImageStatusUpdate
+
 
 async def create_image_with_tags(
     db: Session,

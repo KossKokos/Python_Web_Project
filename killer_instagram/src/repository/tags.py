@@ -1,10 +1,9 @@
-"""
-Тут crud операції тільки над тегами
-"""
 from typing import List
 
 from sqlalchemy.orm import Session
+
 from src.database.models import Tag
+
 
 async def get_or_create_tag(db: Session, tag_name: str) -> Tag:
     """

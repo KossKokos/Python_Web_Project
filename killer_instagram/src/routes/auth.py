@@ -1,28 +1,31 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status, Security, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-
-from src.services.auth import service_auth
 from src.database.db import get_db
+from src.database.models import User
 from src.repository import users as repository_users
 from src.repository.logout import token_to_blacklist
-from src.schemas import users as schema_users, token as schema_token
-from src.services.email import send_email, send_reset_password_email
-from src.services.roles import RoleRights
-from src.services.logout import logout_dependency
-from src.services.banned import banned_dependency
-from src.schemas.email import RequestEmail
-from src.schemas.users import ChangePassword, UserRoleUpdate, UserResponce
-from src.database.models import User
+from src.services.auth import service_auth
+from src.services import (
+    email as service_email,
+    roles as service_roles,
+    banned as service_banned,
+    logout as service_logout
+)
+from src.schemas import (
+    users as schema_users,
+    token as schema_token,
+    email as schema_email,
+)
+
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 security = HTTPBearer()
 
-allowd_operation_change_role= RoleRights(["admin"])
-allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
-allowd_operation_delete_user = RoleRights(["admin"])
+allowd_operation_change_role= service_roles.RoleRights(["admin"])
+allowd_operation_any_user = service_roles.RoleRights(["user", "moderator", "admin"])
+allowd_operation_delete_user = service_roles.RoleRights(["admin"])
 
 @router.post('/signup', status_code=status.HTTP_201_CREATED)
 async def signup(body: schema_users.UserModel, 
@@ -52,7 +55,7 @@ async def signup(body: schema_users.UserModel,
     
     body.password = service_auth.get_password_hash(body.password)
     user = await repository_users.create_user(body, db)
-    background_tasks.add_task(send_email, user.email, user.username, request.base_url)
+    background_tasks.add_task(service_email.send_email, user.email, user.username, request.base_url)
     return {'user': user, 'detail': 'User successfully created, please check your email for verification'}
 
 
@@ -87,7 +90,8 @@ async def login(body: OAuth2PasswordRequestForm = Depends(),
 
 @router.get('/refresh_token', 
             response_model=schema_token.TokenResponce,
-            dependencies=[Depends(logout_dependency),Depends(allowd_operation_any_user), Depends(banned_dependency)])
+            dependencies=[Depends(service_logout.logout_dependency),Depends(allowd_operation_any_user), 
+                          Depends(service_banned.banned_dependency)])
         
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(security),
                         current_user: User= Depends(service_auth.get_current_user), db: Session = Depends(get_db)):
@@ -146,7 +150,7 @@ async def confirm_email(token: str, db: Session = Depends(get_db)):
 
 
 @router.post('/request_email', status_code=status.HTTP_202_ACCEPTED)
-async def request_email(body: RequestEmail, background_task: BackgroundTasks, 
+async def request_email(body: schema_email.RequestEmail, background_task: BackgroundTasks, 
                         request: Request, db: Session = Depends(get_db)):
     """
     The request_email function is used to send an email to the user with a link
@@ -164,12 +168,12 @@ async def request_email(body: RequestEmail, background_task: BackgroundTasks,
     if user is not None and user.confirmed:
         return {'detail': 'Email is already confirmed'}
     if user:
-        background_task.add_task(send_email, user.email, user.username, request.base_url)
+        background_task.add_task(service_email.send_email, user.email, user.username, request.base_url)
     return {'detail': 'Check your email for further information'}
 
 
 @router.post('/reset_password', status_code=status.HTTP_202_ACCEPTED)
-async def reset_password_request(body: RequestEmail, background_task: BackgroundTasks,
+async def reset_password_request(body: schema_email.RequestEmail, background_task: BackgroundTasks,
                           request: Request, db: Session = Depends(get_db)):
     """
     The reset_password_request function is used to send a reset password email to the user.
@@ -184,12 +188,12 @@ async def reset_password_request(body: RequestEmail, background_task: Background
     """
     user = await repository_users.get_user_by_email(body.email, db)
     if user:
-        background_task.add_task(send_reset_password_email, user.email, user.username, request.base_url)
+        background_task.add_task(service_email.send_reset_password_email, user.email, user.username, request.base_url)
     return {'detail': 'Check your email for further information'}
 
 
 @router.patch('/change_password/{token}', status_code=status.HTTP_202_ACCEPTED)
-async def reset_password(body: ChangePassword, token: str, db: Session = Depends(get_db)):
+async def reset_password(body: schema_users.ChangePassword, token: str, db: Session = Depends(get_db)):
     """
     The reset_password function is used to reset a user's password.
         It takes in the body of the request, which contains a new_password field, and a token that was sent to the user's email address.
@@ -211,12 +215,13 @@ async def reset_password(body: ChangePassword, token: str, db: Session = Depends
     return {"detail": "User's password was changed succesfully"}
 
 
-@router.patch('/change_role/{user_id}', response_model=UserResponce, 
+@router.patch('/change_role/{user_id}', response_model=schema_users.UserResponce, 
                                         status_code=status.HTTP_202_ACCEPTED,
-                                        dependencies=[Depends(logout_dependency), Depends(allowd_operation_change_role)])
+                                        dependencies=[Depends(service_logout.logout_dependency), 
+                                                      Depends(allowd_operation_change_role)])
 async def change_user_role(
     user_id: int,
-    body: UserRoleUpdate,
+    body: schema_users.UserRoleUpdate,
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -251,7 +256,7 @@ async def change_user_role(
 
 @router.get('/logout',
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation_any_user)])
 async def logout(credentials: HTTPAuthorizationCredentials = Security(security), db: Session = Depends(get_db), 
                 current_user: User = Depends(service_auth.get_current_user)):
@@ -273,9 +278,9 @@ async def logout(credentials: HTTPAuthorizationCredentials = Security(security),
     return {"message": f"User {current_user.email} successfully logged out"}
 
 
-@router.delete('/delete_user/{user_id}',
+@router.delete('/user/{user_id}',
                status_code=status.HTTP_200_OK,
-               dependencies=[Depends(logout_dependency), Depends(allowd_operation_delete_user)])
+               dependencies=[Depends(service_logout.logout_dependency), Depends(allowd_operation_delete_user)])
 async def delete_user(user_id: int, current_user: User = Depends(service_auth.get_current_user),
                       db: Session = Depends(get_db)):
     """

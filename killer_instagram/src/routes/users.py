@@ -1,60 +1,32 @@
-"""
-1.	Створити маршрут для профіля користувача за його унікальним юзернеймом. Повинна повертатися вся інформація про користувача. Імя, коли зарєсттрований, кількість завантажених фото тощо
-2.	Користувач може редагувати інформацію про себе, та бачити інформацію про себе. Це мають бути різні маршрути з профілем користувача. Профіль для всіх користувачів, а інформація для себе - це те що можно редагувати
-3.	Адміністратор може робити користувачів неактивними (банити). Неактивні користувачі не можуть заходити в застосунок
-
-User ID: A unique identifier for each user in the system.
-Username: The name chosen by the user for identification.
-Email: User's email address, often used for communication and login purposes.
-Password (encrypted): A securely stored and encrypted password for user authentication.
-Full Name: User's complete name (first name, last name, etc.).
-Date of Birth: User's date of birth.
-Profile Picture URL: URL pointing to the user's profile picture or avatar.
-Bio/Description: A brief description or biography of the user.
-Location: User's geographical location (city, state, country).
-Contact Information: Phone number, address, etc. (if applicable and provided).
-Social Media Links: Links to the user's social media profiles (Facebook, Twitter, LinkedIn, etc.).
-Preferences/Settings: User-specific preferences or settings related to the application or service.
-Account Creation Date: Date and time when the user account was created.
-Last Login Date: Date and time of the user's last login to the system.
-Account Status: Indicates whether the account is active, suspended, or deleted.
-Role/Permissions: User's role or level of access within the system (e.g., admin, regular user, moderator).
-
-"""
-
-
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Security
-from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-import cloudinary
-from cloudinary import uploader
-from src.repository.logout import token_to_blacklist
 
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
-from src.repository.logout import token_to_blacklist
 from src.services.auth import service_auth
-from src.services.cloudinary import CloudImage
-from src.conf.config import settings
 from src.schemas.users import UserResponce
-from src.services.roles import RoleRights
-from src.services.logout import logout_dependency
-from src.services.banned import banned_dependency
-from src.services.cloudinary import CloudImage
-# BannedUserUpdate
+from src.services import (
+    roles as service_roles,
+    logout as service_logout,
+    banned as service_banned,
+    cloudinary as service_cloudinary
+)
+
+
 router = APIRouter(prefix='/users', tags=['users'])
 security = HTTPBearer()
 
-allowd_operation = RoleRights(["user", "moderator", "admin"])
-allowd_operation_ban = RoleRights(["admin"])
+allowd_operation = service_roles.RoleRights(["user", "moderator", "admin"])
+allowd_operation_ban = service_roles.RoleRights(["admin"])
 
 
 @router.get('/',
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation),
-                          Depends(banned_dependency)]
+                          Depends(service_banned.banned_dependency)]
             )
 async def get_all_usernames(current_user: User = Depends(service_auth.get_current_user),
                             db: Session = Depends(get_db)):
@@ -71,9 +43,9 @@ async def get_all_usernames(current_user: User = Depends(service_auth.get_curren
 
 @router.get('/me', response_model=UserResponce,
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation),
-                          Depends(banned_dependency)]
+                          Depends(service_banned.banned_dependency)]
             )
 async def read_users_me(current_user: User = Depends(service_auth.get_current_user)):
     """
@@ -92,9 +64,9 @@ async def read_users_me(current_user: User = Depends(service_auth.get_current_us
 
 @router.get('/{username}', 
             status_code=status.HTTP_200_OK,
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation),
-                          Depends(banned_dependency)],
+                          Depends(service_banned.banned_dependency)],
             description = "Any User")
 async def get_user_profile(username, 
                            current_user: User = Depends(service_auth.get_current_user),
@@ -133,9 +105,9 @@ async def get_user_profile(username,
 
 @router.patch('/avatar', response_model=UserResponce, 
                         status_code=status.HTTP_200_OK,
-                        dependencies=[Depends(logout_dependency), 
+                        dependencies=[Depends(service_logout.logout_dependency), 
                                       Depends(allowd_operation),
-                                      Depends(banned_dependency)],
+                                      Depends(service_banned.banned_dependency)],
                         )
 async def update_avatar_user(file: UploadFile = File(), 
                              current_user: User = Depends(service_auth.get_current_user),
@@ -153,10 +125,10 @@ async def update_avatar_user(file: UploadFile = File(),
     :return: The updated user
 `    """
   
-    public_id = CloudImage.generate_name_avatar(email=current_user.email)
+    public_id = service_cloudinary.CloudImage.generate_name_avatar(email=current_user.email)
     print (114, public_id)
-    cloud = CloudImage.upload_avatar(file=file.file, public_id=public_id)
-    url = CloudImage.get_url(public_id=public_id, cloud=cloud)
+    cloud = service_cloudinary.CloudImage.upload_avatar(file=file.file, public_id=public_id)
+    url = service_cloudinary.CloudImage.get_url(public_id=public_id, cloud=cloud)
 
     user = await repository_users.update_avatar(current_user.email, url=url, db=db)
     return user
@@ -164,7 +136,7 @@ async def update_avatar_user(file: UploadFile = File(),
 @router.patch('/ban/{user_id}', 
                         response_model=UserResponce, 
                         status_code=status.HTTP_200_OK,
-                        dependencies=[Depends(logout_dependency), 
+                        dependencies=[Depends(service_logout.logout_dependency), 
                                       Depends(allowd_operation_ban)],
                         )
 async def update_banned_status(user_id:str,
@@ -198,7 +170,7 @@ async def update_banned_status(user_id:str,
 @router.patch('/unban/{user_id}', 
                         response_model=UserResponce, 
                         status_code=status.HTTP_200_OK,
-                        dependencies=[Depends(logout_dependency), 
+                        dependencies=[Depends(service_logout.logout_dependency), 
                                       Depends(allowd_operation_ban)],
                         )
 async def update_unbanned_status(user_id:str,

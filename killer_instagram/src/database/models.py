@@ -1,14 +1,9 @@
-from typing import List
-
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, func, CheckConstraint, Table
-from sqlalchemy.orm import relationship, declarative_base, Mapped
-from sqlalchemy.sql.sqltypes import Date, DateTime
+from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.sql.sqltypes import DateTime
+
 
 Base = declarative_base()
-    
-"""
-Змінюйте, де потрібно, робіть міграції і перевіряйте
-"""
 
 
 class User(Base):

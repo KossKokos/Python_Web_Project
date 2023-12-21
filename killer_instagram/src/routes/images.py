@@ -1,39 +1,37 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Query, Body
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.responses import StreamingResponse
-from io import BytesIO
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
-from src.database.db import get_db
+from src.database.db import get_db, db_transaction
+from src.schemas import images as schemas_images
+from src.database.models import User, Image
 from src.services.auth import service_auth
+from src.services import (
+    roles as service_roles,
+    logout as service_logout,
+    banned as service_banned,
+    qr_code as service_qr_code,
+    cloudinary as service_cloudinary
+)
 from src.repository import (
     images as repository_images, 
     rating as repository_rating, 
     tags as repository_tags
 )
-from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
-from src.database.models import User, TransformedImageLink, Image
-from src.database.db import db_transaction
-from src.services.cloudinary import CloudImage
-from src.services import qr_code as service_qr_code
-from src.services.roles import RoleRights
-from src.services.logout import logout_dependency
-from src.services.banned import banned_dependency
 
 router = APIRouter(prefix='/images', tags=['images'])
 
 
-allowd_operation_admin= RoleRights(["admin"])
-allowd_operation_any_user = RoleRights(["user", "moderator", "admin"])
-allowd_operation_delete_user = RoleRights(["admin"])
+allowd_operation_admin= service_roles.RoleRights(["admin"])
+allowd_operation_any_user = service_roles.RoleRights(["user", "moderator", "admin"])
+allowd_operation_delete_user = service_roles.RoleRights(["admin"])
 
 @router.post("/", 
              status_code=status.HTTP_200_OK,
-             dependencies=[Depends(logout_dependency), 
+             dependencies=[Depends(service_logout.logout_dependency), 
                            Depends(allowd_operation_any_user),
-                           Depends(banned_dependency)],
+                           Depends(service_banned.banned_dependency)],
              response_model=schemas_images.ImageResponse)
 async def upload_image(
     description: str,
@@ -62,8 +60,8 @@ async def upload_image(
 
     try:
         file_extension = file.filename.split(".")[-1]
-        public_id = CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
-        cloudinary_response = CloudImage.upload_image(file=file.file, public_id=public_id)
+        public_id = service_cloudinary.CloudImage.generate_name_image(email=current_user.email, filename=file.filename)
+        cloudinary_response = service_cloudinary.CloudImage.upload_image(file=file.file, public_id=public_id)
 
         # Save image information to the database
         image: Image = await repository_images.create_image(
@@ -83,7 +81,7 @@ async def upload_image(
                 existing_tags.append(tag_name)
 
         # Add tags to the uploaded image on Cloudinary
-        CloudImage.add_tags(cloudinary_response["public_id"], tags)
+        service_cloudinary.CloudImage.add_tags(cloudinary_response["public_id"], tags)
 
         return image
     except HTTPException as e:
@@ -96,9 +94,9 @@ async def upload_image(
 
 
 @router.delete("/{image_id}",
-               dependencies=[Depends(logout_dependency), 
+               dependencies=[Depends(service_logout.logout_dependency), 
                              Depends(allowd_operation_any_user),
-                             Depends(banned_dependency)], 
+                             Depends(service_banned.banned_dependency)], 
                              status_code=status.HTTP_202_ACCEPTED)
 async def delete_image(
     image_id: int,
@@ -128,7 +126,7 @@ async def delete_image(
             raise HTTPException(status_code=403, detail="Permission denied")
 
         # Delete image from Cloudinary
-        CloudImage.delete_image(public_id=image.public_id)
+        service_cloudinary.CloudImage.delete_image(public_id=image.public_id)
 
         # Delete image from the database
         await repository_images.delete_image_from_db(db=db, image_id=image_id)
@@ -137,9 +135,9 @@ async def delete_image(
 
 
 @router.put("/{image_id}",
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation_any_user),
-                          Depends(banned_dependency)])
+                          Depends(service_banned.banned_dependency)])
 async def update_image_description(
     image_id: int,
     body: schemas_images.ImageDescriptionUpdate,
@@ -174,7 +172,7 @@ async def update_image_description(
         image = await repository_images.update_image_in_db(db=db, image_id=image_id, new_description=body.new_description)
 
         # Asynchronously update image information on Cloudinary
-        CloudImage.update_image_description_cloudinary(image.public_id, body.new_description)
+        service_cloudinary.CloudImage.update_image_description_cloudinary(image.public_id, body.new_description)
 
         return image
     except HTTPException as e:
@@ -187,9 +185,9 @@ async def update_image_description(
 
 
 @router.get("/{image_id}", response_model=schemas_images.ImageResponse,
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation_any_user),
-                          Depends(banned_dependency)], 
+                          Depends(service_banned.banned_dependency)], 
                           status_code=status.HTTP_200_OK)
 async def get_image(image_id: int, 
                     db: Session = Depends(get_db),
@@ -247,16 +245,15 @@ async def get_transformed_image(image_id: int, current_user: User = Depends(serv
 
 
 @router.patch("/remove_object/{image_id}",
-             dependencies=[Depends(logout_dependency), 
+             dependencies=[Depends(service_logout.logout_dependency), 
                            Depends(allowd_operation_any_user),
-                           Depends(banned_dependency)], 
+                           Depends(service_banned.banned_dependency)], 
                            status_code=status.HTTP_202_ACCEPTED)
 async def remove_object_from_image(
     image_id: int,
     prompt: str = "Star",
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
-    current_user: User = Depends(service_auth.get_current_user),
 ):
     # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
@@ -270,7 +267,7 @@ async def remove_object_from_image(
         raise HTTPException(status_code=404, detail="Image not found")
     
     try:
-        transformed_image = CloudImage.remove_object(image.public_id, prompt)
+        transformed_image = service_cloudinary.CloudImage.remove_object(image.public_id, prompt)
         transformation_url = transformed_image['secure_url']
 
         # Check if QR code URL exists in the database
@@ -306,16 +303,15 @@ async def remove_object_from_image(
 
 
 @router.post("/apply_rounded_corners/{image_id}",
-             dependencies=[Depends(logout_dependency), 
+             dependencies=[Depends(service_logout.logout_dependency), 
                            Depends(allowd_operation_any_user),
-                           Depends(banned_dependency)])
+                           Depends(service_banned.banned_dependency)])
 async def apply_rounded_corners_to_image(
     image_id: int,
     border: str = "5px_solid_black",
     radius: int = 50,
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
-    current_user: User = Depends(service_auth.get_current_user)
 ):
     # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
@@ -328,7 +324,7 @@ async def apply_rounded_corners_to_image(
         raise HTTPException(status_code=404, detail="Image not found")
     
     try:
-        transformed_image = CloudImage.apply_rounded_corners(image.public_id, border, radius)
+        transformed_image = service_cloudinary.CloudImage.apply_rounded_corners(image.public_id, border, radius)
         transformation_url = transformed_image['secure_url']
 
         # Check if QR code URL exists in the database
@@ -364,16 +360,15 @@ async def apply_rounded_corners_to_image(
 
 
 @router.put("/improve_photo/{image_id}",
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation_any_user),
-                          Depends(banned_dependency)])
+                          Depends(service_banned.banned_dependency)])
 async def improve_photo(
     image_id: int,
     mode: str = 'outdoot',
     blend: int = 100,
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
-    current_user: User = Depends(service_auth.get_current_user)
 ):
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
 
@@ -385,7 +380,7 @@ async def improve_photo(
         raise HTTPException(status_code=404, detail="Image not found")
   
     try:
-        transformed_image = CloudImage.improve_photo(image.image_url, mode, blend)
+        transformed_image = service_cloudinary.CloudImage.improve_photo(image.image_url, mode, blend)
         transformation_url = transformed_image['secure_url']
 
         # Save transformed image information to the database
@@ -407,14 +402,13 @@ async def improve_photo(
 
 
 @router.get("/get_link_qrcode/{image_id}",
-            dependencies=[Depends(logout_dependency), 
+            dependencies=[Depends(service_logout.logout_dependency), 
                           Depends(allowd_operation_any_user),
-                          Depends(banned_dependency)])
+                          Depends(service_banned.banned_dependency)])
 async def get_transformed_image_link_qrcode(
     image_id: int,
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
-    current_user: User = Depends(service_auth.get_current_user)
 ):
     """
     Get a link from the database.
@@ -491,7 +485,7 @@ async def make_qr_code_url_for_image(
         # Генерація QR-коду
         qr_code = await service_qr_code.generate_qr_code(selected_transformation_url)
 
-        publick_id = CloudImage.generate_name_image(email=current_user.email, filename="qr_code")
+        publick_id = service_cloudinary.CloudImage.generate_name_image(email=current_user.email, filename="qr_code")
 
         # Оновити Cloudinary і зберегти QR-код
         qr_code_publick_id = await service_qr_code.upload_qr_code_to_cloudinary(qr_code, public_id=publick_id)
@@ -516,7 +510,7 @@ async def make_qr_code_url_for_image(
 
 
 @router.get("/{image_id}/rating", status_code=200,
-            dependencies=[Depends(logout_dependency), Depends(allowd_operation_any_user)])
+            dependencies=[Depends(service_logout.logout_dependency), Depends(allowd_operation_any_user)])
 async def get_average_rating(image_id: int, 
                      current_user: User = Depends(service_auth.get_current_user),
                      db: Session = Depends(get_db)):
