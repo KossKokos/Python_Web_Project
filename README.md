@@ -1,18 +1,22 @@
+
+Instagram Killer
+================
+
 1) Requirements:
   - python==3.10
   - alembic==1.10.2
-  - Babel==2.13.0
+  - babel==2.13.0
   - bcrypt==4.0.1
   - cloudinary==1.32.0
   - colorama==0.4.6
   - cryptography==41.0.5
   - docutils==0.19
-  - email-validator==1.3.1
   - fastapi==0.95.0
+  - email-validator==1.3.1
   - fastapi-limiter==0.1.5
   - fastapi-mail==1.2.7
   - httpx==0.25.2
-  - Jinja2==3.1.2
+  - jinja2==3.1.2
   - passlib==1.7.4
   - psycopg2==2.9.5
   - pydantic==1.10.7
@@ -24,11 +28,14 @@
   - redis==4.5.4
   - requests==2.31.0
   - sniffio==1.3.0
-  - Sphinx==6.1.3
-  - SQLAlchemy==2.0.7
+  - sphinx==6.1.3
+  - sqlalchemy==2.0.7
   - starlette==0.26.1
   - urllib3==1.26.18
   - uvicorn==0.21.1
+  - pytest-asyncio==0.23.2
+  - pytest-trio==0.8.0
+  - qrcode["pil"]==7.4.2
 
 2) Застосунок запускається викликом: python main.py
 
