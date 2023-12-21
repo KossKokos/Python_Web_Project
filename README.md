@@ -13,8 +13,8 @@
 - [Залежності](#залежності)
 - [Опис](#опис)
 - [Налаштування та запуск API](#налаштування_та_запуск_API)
-- [Installation](#installation)
-- [License](#license)
+- [Документація](#документація)
+- [Ліцензія](#ліцензія)
 
 ## Особливості
 - Завантажуйте, редагуйте та видаляйте світлини
@@ -70,46 +70,20 @@
 
 
 ## Налаштування та запуск API 
-- Створить віртуальне оточення використовуючи Poetry за допомогою pyproject.toml
+- Створить віртуальне оточення використовуючи Poetry за допомогою pyproject.toml.
 
 - Файл .example.env є прикладом, які дані потрібно записувати. Для того, щоб запустити API, потрібно перейменувати його в .env та ввести свої дані.
 
-- Важливо!!! Усі скоманди для запуску застосунку повинні виконуватись у теці Instagram_killer
+- Важливо!!! Усі скоманди для запуску застосунку повинні виконуватись у теці Instagram_killer. Для цього у терміналі необхідно виконати команду cd Instagram_killer 
 
 - Файл docker-compose потрібен для запуску відразу двох баз даних: postgres та redis. Це полегшує роботу та збільшує продуктивність. Щоб запустити  його, введіть в консолі команду "docker-compose up" або "docker-compose up -d", для того, щоб не бачити логування. Щоб зупинити, введіть в консолі команду "docker-compose down".
 
 - Для запуску сервера потрібно виконати команду python main.py
 
-## Examples
+## Документація
 
-For more details and examples, please refer to the [documentation](./Documentation/).
+http://localhost:8000/docs
 
-## Installation
+## Ліцензія
 
-1. Clone the repository:
- ```bash
-git clone https://github.com/your-username/python-cli-assistant.git
-cd python-cli-assistant
-```
-2. Install dependancies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Run the Python CLI Assistant:
-
-```bash
-python assistant.py
-```
-
-## License
-
-This project is licensed under the MIT License.
-
-## Contributors
-- [Oleksandr Dyshliuk](https://github.com/Dishalex)
-- [Dmytro Kruhlov](https://github.com/Dmytro-Kruhlov)
-- [Michael Ivanov](https://github.com/MikeIV2007)
-- [Artem Dorofeev](https://github.com/artem-dorofeev)
-- [Igor Yevtushenko](https://github.com/II-777)
+Цей проект підпадає під дію MIT лицензіЇ.
