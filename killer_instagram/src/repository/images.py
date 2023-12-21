@@ -8,43 +8,43 @@ from src.repository import tags as repository_tags
 from src.schemas.images import ImageResponse, ImageStatusUpdate
 
 
-async def create_image_with_tags(
-    db: Session,
-    user: User,
-    description: str,
-    tags: List[str],
-    file_extension: str,
-) -> ImageResponse:
-    """
-    Create an image with tags, upload to Cloudinary, and store in the database.
+# async def create_image_with_tags(
+#     db: Session,
+#     user: User,
+#     description: str,
+#     tags: List[str],
+#     file_extension: str,
+# ) -> ImageResponse:
+#     """
+#     Create an image with tags, upload to Cloudinary, and store in the database.
 
-    Args:
-        db (Session): The database session.
-        user (User): The user creating the image.
-        description (str): The description for the image.
-        tags (List[str]): The list of tags for the image.
-        file_extension (str): The file extension of the image.
+#     Args:
+#         db (Session): The database session.
+#         user (User): The user creating the image.
+#         description (str): The description for the image.
+#         tags (List[str]): The list of tags for the image.
+#         file_extension (str): The file extension of the image.
 
-    Returns:
-        ImageResponse: The created image.
-    """
-    image_path = f"images/{user.id}_{description}.{file_extension}"
+#     Returns:
+#         ImageResponse: The created image.
+#     """
+#     image_path = f"images/{user.id}_{description}.{file_extension}"
 
-    image = Image(user_id=user.id, description=description)
-    db.add(image)
-    db.commit()
-    db.refresh(image)
+#     image = Image(user_id=user.id, description=description)
+#     db.add(image)
+#     db.commit()
+#     db.refresh(image)
 
 
-    transformed_link = TransformedImageLink(
-        image_id=image.id,
-        transformation_url=cloudinary_response["secure_url"],
-        qr_code_url=cloudinary_response["qr_code_url"],
-    )
-    db.add(transformed_link)
-    db.commit()
+#     transformed_link = TransformedImageLink(
+#         image_id=image.id,
+#         transformation_url=cloudinary_response["secure_url"],
+#         qr_code_url=cloudinary_response["qr_code_url"],
+#     )
+#     db.add(transformed_link)
+#     db.commit()
 
-    return ImageResponse.from_orm(image)
+#     return ImageResponse.from_orm(image)
 
 
 async def add_tag_to_image(db: Session, image_id: int, tag_id: int):
@@ -198,7 +198,6 @@ async def create_image(
     db.commit()
     db.refresh(image)
     for tag_name in tags:
-        #tag = await get_or_create_tag(db, tag_name="Test")
         tag = await repository_tags.get_or_create_tag(db, tag_name)
         await add_tag_to_image(db, image_id=image.id, tag_id=tag.id)
 
@@ -316,7 +315,7 @@ async def create_transformed_image_link(
         "qr_code_url": qr_code_url,
     }
 
-    #return ImageStatusUpdate(**response_data)
+    return ImageStatusUpdate(**response_data)
 
 def get_transformation_url_by_image_id(db: Session, image_id: int) -> str:
     """

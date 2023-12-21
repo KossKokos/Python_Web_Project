@@ -126,7 +126,6 @@ async def update_avatar_user(file: UploadFile = File(),
 `    """
   
     public_id = service_cloudinary.CloudImage.generate_name_avatar(email=current_user.email)
-    print (114, public_id)
     cloud = service_cloudinary.CloudImage.upload_avatar(file=file.file, public_id=public_id)
     url = service_cloudinary.CloudImage.get_url(public_id=public_id, cloud=cloud)
 

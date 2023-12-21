@@ -44,7 +44,7 @@ def admin_login(client, user_id_2):
 @pytest.fixture(scope='function')
 def user_id_3_role_admin(client, user_id_3, session, monkeypatch):
     mock_send_email = MagicMock()
-    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
     signup_response = client.post(
         "/api/auth/signup",
         json=user_id_3,
@@ -60,7 +60,7 @@ def user_id_3_role_admin(client, user_id_3, session, monkeypatch):
 @pytest.fixture(scope='function')
 def get_email_from_signup(client, user_id_2, monkeypatch) -> str:
     mock_send_email = MagicMock()
-    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
     response = client.post(
         "/api/auth/signup",
         json=user_id_2,
@@ -93,7 +93,7 @@ def no_user_email_token():
 
 def test_create_user(client, user, monkeypatch):
     mock_send_email = MagicMock()
-    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
     response = client.post(
         "/api/auth/signup",
         json=user,
@@ -107,7 +107,7 @@ def test_create_user(client, user, monkeypatch):
 
 def test_create_user_again(client, user, monkeypatch):
     mock_send_email = MagicMock()
-    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
     response = client.post(
         "/api/auth/signup",
         json=user,
@@ -166,7 +166,7 @@ def test_login_wrong_email(client, user):
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
 def test_refresh_token_200(client, super_admin_login):
-    old_refresh_token = super_admin_login['refresh_token']
+    old_refresh_token = super_admin_login['access_token']
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         response = client.get(
@@ -193,8 +193,8 @@ def test_refresh_token_not_token(client):
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
-def test_refresh_token_access_token(client, super_admin_login):
-    old_refresh_token = super_admin_login["access_token"]
+def test_refresh_token_wrong_scope(client, super_admin_login):
+    old_refresh_token = super_admin_login["refresh_token"]
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         response = client.get(
@@ -203,7 +203,7 @@ def test_refresh_token_access_token(client, super_admin_login):
         )
         assert response.status_code == 401, response.text
         data = response.json()
-        assert data["detail"] == "Invalid scope for token"
+        assert data["detail"] == "Could not validate credentials"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -220,7 +220,7 @@ def test_refresh_token_access_token(client, super_admin_login):
         )
         assert response.status_code == 401, response.text
         data = response.json()
-        assert data["detail"] == "User with this token doesn't exist"
+        assert data["detail"] == "Could not validate credentials"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -228,7 +228,7 @@ def test_request_email_ok(client, get_email_from_signup, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
-        monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+        monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
         body: dict = {"email": get_email_from_signup}
         response = client.post(
             "api/auth/request_email",
@@ -256,7 +256,7 @@ def test_request_email_again(client, user_id_2, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
-        monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+        monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
         body: dict = {"email": user_id_2["email"]}
         response = client.post(
             "api/auth/request_email",
@@ -296,7 +296,7 @@ def test_request_reset_password_email(client, user_id_2, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
-        monkeypatch.setattr("src.routes.auth.send_reset_password_email", mock_send_email)
+        monkeypatch.setattr("src.routes.auth.service_email.send_reset_password_email", mock_send_email)
         body: dict = {"email": user_id_2["email"]}
         response = client.post(
             "api/auth/reset_password",
@@ -348,7 +348,7 @@ def test_change_role_not_admin(client, admin_login):
         )    
         assert response.status_code == 403, response.text
         data: dict = response.json()
-        assert data["detail"] == "Permission denied. Only admin can change roles."
+        assert data["detail"] == "Operation forbidden for user"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 

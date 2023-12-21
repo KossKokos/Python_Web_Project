@@ -38,7 +38,7 @@ async def add_comment(body: schema_comments.CommentModel,
     if not image:
         raise HTTPException(status_code=404, detail="Image doesn't exist")
     if image.user_id == current_user.id:
-        raise HTTPException(status_code=400, detail="You can't comment your own image")
+        raise HTTPException(status_code=403, detail="You can't comment your own image")
     comment: Comment = await repository_comments.add_new_comment(body=body, user_id=current_user.id, db=db)
     return comment
 

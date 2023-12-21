@@ -53,7 +53,6 @@ class TestImages(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.description, self.test_description)
         self.assertEqual(result.user_id, self.test_user_id)
         self.assertEqual(result.image_url, self.test_image_url)
-        self.assertEqual(result.public_id, self.test_public_id)
 
 
     async def test_get_image_by_id_ok(self):
@@ -152,8 +151,8 @@ class TestImages(unittest.IsolatedAsyncioTestCase):
             transformation_url=test_transformation_url,
             qr_code_url=test_qr_code_url
             )
-        self.assertIsInstance(result, TransformedImageLink)
-        self.assertEqual(result.image_id, self.test_image_id)
+        self.assertIsInstance(result, schemas_images.ImageStatusUpdate)
+        self.assertTrue(result.done)
 
 
     async def test_find_images_by_keyword(self):

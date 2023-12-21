@@ -7,9 +7,9 @@ sys.path.append(str(path_root))
 import pytest
 from unittest.mock import MagicMock, patch
 
-from src.database.models import User, Image, Rating
+from src.database.models import User
 from src.services.auth import service_auth
-from src.schemas import rating as schemas_rating
+
 
 
 """To start the test, enter : pytest tests/test_routes/test_rating.py -v 
@@ -35,7 +35,7 @@ def signup_admin(client, session, user, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
-        monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+        monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
         signup_responce = client.post(
             "/api/auth/signup",
             json=user
@@ -50,7 +50,7 @@ def signup_user(client, session, user_id_2, monkeypatch):
     with patch.object(service_auth, 'r_cashe') as r_mock:
         r_mock.get.return_value = None
         mock_send_email = MagicMock()
-        monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+        monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
         signup_responce = client.post(
             "/api/auth/signup",
             json=user_id_2
@@ -94,9 +94,9 @@ def test_upload_image(client, get_access_token_admin, monkeypatch):
 
         cloudinary_responce = {"secure_url": "secure_url", "public_id": "public_id"}
         mock_cloud_service = MagicMock(return_value=cloudinary_responce)
-        monkeypatch.setattr("src.routes.images.CloudImage.generate_name_image", mock_cloud_service)
-        monkeypatch.setattr("src.routes.images.CloudImage.upload_image", mock_cloud_service)
-        monkeypatch.setattr("src.routes.images.CloudImage.add_tags", mock_cloud_service)
+        monkeypatch.setattr("src.routes.images.service_cloudinary.CloudImage.generate_name_image", mock_cloud_service)
+        monkeypatch.setattr("src.routes.images.service_cloudinary.CloudImage.upload_image", mock_cloud_service)
+        monkeypatch.setattr("src.routes.images.service_cloudinary.CloudImage.add_tags", mock_cloud_service)
         
         test_description = "test_description"
         tags = ["hello", "world"]

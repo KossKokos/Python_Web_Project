@@ -38,7 +38,6 @@ class TransformedImageLinkResponse(BaseModel):
 class ImageResponse(BaseModel):
     id: int
     user_id: int
-    public_id: Optional[str]
     description: Optional[str]
     transformed_links: Optional[List[TransformedImageLinkResponse]]
     image_url: Optional[str]

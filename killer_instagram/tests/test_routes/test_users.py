@@ -20,7 +20,7 @@ in the killer_instagram directory in the console"""
 @pytest.fixture(scope="function")
 def access_token(client, user, session, monkeypatch):
     mock_send_email = MagicMock()
-    monkeypatch.setattr("src.routes.auth.send_email", mock_send_email)
+    monkeypatch.setattr("src.routes.auth.service_email.send_email", mock_send_email)
     signup_response = client.post(
         "/api/auth/signup",
         json=user,
@@ -55,7 +55,7 @@ def test_read_users_me_ok(client, access_token, user):
             "/api/users/me",
             headers={"Authorization": f"Bearer {access_token}"}
         ) 
-        assert response.status_code == 202, response.text
+        assert response.status_code == 200, response.text
         data = response.json()
         assert data["username"] == user["username"]
         assert data["email"] == user["email"]
@@ -78,9 +78,9 @@ def test_read_users_me_no_user(client, no_email_token):
 
 def test_update_avatar_no_user(client, no_email_token, monkeypatch):
     mock_cloud_service = MagicMock(return_value="image_url")
-    monkeypatch.setattr("src.routes.users.CloudImage.generate_name_avatar", mock_cloud_service)
-    monkeypatch.setattr("src.routes.users.CloudImage.upload", mock_cloud_service)
-    monkeypatch.setattr("src.routes.users.CloudImage.get_url", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.service_cloudinary.CloudImage.generate_name_avatar", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.service_cloudinary.CloudImage.upload_avatar", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.service_cloudinary.CloudImage.get_url", mock_cloud_service)
     image_path = r"tests\test_routes\python_logo.jpg"
     file = open(image_path, "rb")
     with patch.object(service_auth, 'r_cashe') as r_mock:
@@ -99,9 +99,9 @@ def test_update_avatar_no_user(client, no_email_token, monkeypatch):
 def test_update_avatar_ok(client, access_token, monkeypatch):
     new_avatar = "image_url"
     mock_cloud_service = MagicMock(return_value=new_avatar)
-    monkeypatch.setattr("src.routes.users.CloudImage.generate_name_avatar", mock_cloud_service)
-    monkeypatch.setattr("src.routes.users.CloudImage.upload", mock_cloud_service)
-    monkeypatch.setattr("src.routes.users.CloudImage.get_url", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.service_cloudinary.CloudImage.generate_name_avatar", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.service_cloudinary.CloudImage.upload_avatar", mock_cloud_service)
+    monkeypatch.setattr("src.routes.users.service_cloudinary.CloudImage.get_url", mock_cloud_service)
     image_path = r"tests\test_routes\python_logo.jpg"
     file = open(image_path, "rb")
     with patch.object(service_auth, 'r_cashe') as r_mock:
