@@ -1,24 +1,24 @@
-# Застосунок Instagram Killer (Team 4)
+# Project Infinity (Team 8)
 
-Застосунок "Instagram Killere" - інноваційна платформа з безпечною аутентифікацією через JWT токени та різними ролями для користувачів. Завантажуйте, редагуйте та видаляйте світлини, додавайте теги та отримуйте унікальні QR-коди для трансформованих зображень. Надавайте коментарі, відкривайте свої профілі та здійснюйте пошук за ключовими словами та тегами. Рейтинг та можливість модерування роблять цю платформу ідеальним місцем для спільного обміну фотографіями та взаємодії.
+Welcome to the Python CLI Assistant! This command-line program helps you manage your contact book, notes, and more with simple and intuitive commands.
 
 ![Logo](https://github.com/Dishalex/Infinity/blob/dev/Documentation/logo.jpg)
 
 Photo by [Izabel](https://unsplash.com/@peacelily234?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText")
 
-## Зміст
-- [Особливості](#особливості)
+## Table of Contents
+- [Features](#features)
 - [Usage](#usage)
 - [Commands](#commands)
 - [Examples](#examples)
 - [Installation](#installation)
 - [License](#license)
 
-## Особливості
-- Завантажуйте, редагуйте та видаляйте світлини
-- Додавайте теги та отримуйте унікальні QR-коди для трансформованих зображень
-- Надавайте коментарі, відкривайте свої профілі та здійснюйте пошук за ключовими словами та тегами
-- Рейтинг та можливість модерування роблять цю платформу ідеальним місцем для спільного обміну фотографіями та взаємодії.
+## Features
+- Add and manage contacts with various details like name, phone, email, and birthday.
+- Create and manage notes with tags for better organization.
+- Easily search for and manipulate contact and note records.
+- View and manage notes, tags, and contact details in a browsing mode.
 
 ## Usage
 To get started, clone this repository and follow the installation instructions in the [Installation](#installation) section.
