@@ -36,7 +36,6 @@ class CloudImage:
     def generate_name_image(email: str, filename: int):
         user_folder = email
         name = hashlib.sha256(email.encode('utf-8')).hexdigest()[:12]
-        # тут замінив image_id на filename, так як можна створювати унікальне ім'я за цим, монжна поміняти на будь-що
         unique_name = f"{filename}," + name
         return f"Users/{user_folder}/Images/{unique_name}"
 
@@ -79,7 +78,7 @@ class CloudImage:
         cloudinary.api.update(public_id, tags=tags_str, resource_type='image')
 
     @staticmethod
-    def remove_object(public_id, mode, prompt):
+    def remove_object(public_id, prompt):
         # e_gen_remove:prompt_Star
         transformed_image_url = cloudinary_url(public_id, effect=f"gen_remove:prompt_{prompt}", secure=True)[0]
         return cloudinary.uploader.upload(transformed_image_url)
@@ -87,11 +86,9 @@ class CloudImage:
     @staticmethod
     def apply_rounded_corners(public_id, border, radius):
         transformed_image_url = cloudinary_url(public_id, transformation=[{'border': border, 'radius': radius}], secure=True)[0]
-        print(f"Transformed @staticmethod URL: {transformed_image_url}")
         return cloudinary.uploader.upload(transformed_image_url)
 
     @staticmethod
     def improve_photo(public_id, mode, blend):
         transformed_image_url = cloudinary_url(public_id, transformation=[{'mode': mode, 'blend': blend}], secure=True)[0]
-        print(f"Transformed @staticmethod URL: {transformed_image_url}")
         return cloudinary.uploader.upload(transformed_image_url)

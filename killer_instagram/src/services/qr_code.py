@@ -3,7 +3,10 @@ import qrcode
 from io import BytesIO
 from sqlalchemy.orm import Session
 from src.database.models import TransformedImageLink
+from src.schemas.images import ImageStatusUpdate
 from src.services.cloudinary import CloudImage
+from cloudinary.uploader import upload
+
 
 async def get_qr_code_url(db: Session, image_id: int) -> str:
     """
@@ -22,7 +25,66 @@ async def get_qr_code_url(db: Session, image_id: int) -> str:
     # Return the QR code URL if found, otherwise return an empty string
     return qr_code_link.qr_code_url if qr_code_link else ""
 
-def generate_qr_code(url: str) -> dict:
+async def save_qr_code_url_to_db(
+    db: Session,
+    image_id: int,
+    transformation_url: str,
+    qr_code_url: str,
+) -> ImageStatusUpdate:
+    """
+    Save qr_code link to the database.
+
+    Args:
+        db (Session): The database session.
+        image_id (int): The ID of the original image.
+        transformation_url (str): The URL of the transformed image.
+        qr_code_url (str): The URL of the QR code for the transformed image.
+
+    Returns:
+        ImageStatusUpdate: Status of the operation.
+    """
+    try:
+        existing_link = db.query(TransformedImageLink).filter_by(image_id=image_id).first()
+
+        if existing_link:
+            # If a record already exists for the given image_id, update it
+            existing_link.transformation_url = transformation_url
+            existing_link.qr_code_url = qr_code_url
+        else:
+            # If no record exists, create a new one
+            new_link = TransformedImageLink(
+                image_id=image_id,
+                transformation_url=transformation_url,
+                qr_code_url=qr_code_url,
+            )
+            db.add(new_link)
+
+        db.commit()
+
+        response_data = {
+            "done": True,
+            "transformation_url": transformation_url,
+            "qr_code_url": qr_code_url,
+        }
+
+        return ImageStatusUpdate(**response_data)
+
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving QR code URL to the database: {str(e)}")
+        raise
+
+
+async def generate_qr_code(url: str) -> str:
+    """
+    Generate QR code for the given data.
+
+    Args:
+        url (str): The data to be encoded in the QR code.
+
+    Returns:
+        str: The base64-encoded image of the generated QR code.
+    """
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -39,30 +101,30 @@ def generate_qr_code(url: str) -> dict:
 
     # Get the base64-encoded image
     encoded_image = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    # with open("qrcode.png", "rb") as image_file:
-    #     encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
     return encoded_image
 
-def generate_and_upload_qr_code(url: str, public_id: str) -> dict:
+
+async def upload_qr_code_to_cloudinary(base64_content: str, public_id: str) -> str:
     """
-    Generate a QR code for the given URL and upload it to Cloudinary.
+    Upload the QR code to Cloudinary.
 
     Args:
-        url (str): The URL for the QR code.
-        public_id (str): The public ID for the QR code in Cloudinary.
+        base64_content (str): The base64-encoded content of the QR code image.
+        public_id (str): The public ID for the Cloudinary upload.
 
     Returns:
-        dict: Cloudinary response for the uploaded QR code.
+        str: The public ID of the uploaded QR code.
     """
-    qr_code_data = generate_qr_code(url)
-    
+    # Decode the base64 content
+    qr_code_data = base64.b64decode(base64_content)
+
     # Upload the QR code to Cloudinary
-    qr_code_upload_response = CloudImage.upload_image(
-        qr_code_data,
+    cloudinary_response = upload(
+        file=qr_code_data,
         public_id=public_id,
         overwrite=True,
+        format="png",  # Adjust the format as needed
     )
-    
-    return qr_code_upload_response
 
+    return cloudinary_response['secure_url']

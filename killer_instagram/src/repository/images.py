@@ -191,34 +191,6 @@ async def add_url_public_id(user_id: int, image_id: int, db: Session) -> Image:
     created_image = db.query(Image).filter(Image.user_id==user_id, Image.id==image_id).first()
     return created_image
 
-
-# async def delete_image_local(
-#     db: Session,
-#     image: Image
-# ) -> ImageResponse:
-#     """
-#     Delete an image and its corresponding file from the local storage.
-
-#     Args:
-#         db (Session): The database session.
-#         image (Image): The image to be deleted.
-
-#     Returns:
-#         ImageResponse: The deleted image.
-#     """
-
-#     # Отримання розширення файлу зображення
-#     file_extension = image.file_extension
-
-#     # Фізичне видалення файлу зображення
-#     image_path = f"images/{image.user_id}_{image.description}_original.{file_extension}"
-#     try:
-#         os.remove(image_path)
-#     except FileNotFoundError:
-#         pass  # Якщо файл вже видалено, ігноруємо помилку
-
-#     return ImageResponse.from_db_model(image)
-
 async def update_image_cloudinary_info(
     db: Session,
     image_id: int,
@@ -355,3 +327,4 @@ async def get_qr_code_url_by_image_id(db: Session, image_id: int) -> str:
 
     # Return the QR code URL if found, otherwise return an empty string
     return qr_code_link.qr_code_url if qr_code_link else ""
+

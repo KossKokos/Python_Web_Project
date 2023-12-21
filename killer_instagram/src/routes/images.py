@@ -13,7 +13,7 @@ from src.database.database import db_transaction
 from src.repository.tags import get_existing_tags
 from typing import List
 from src.services.cloudinary import CloudImage
-from src.services.qr_code import get_qr_code_url, generate_qr_code, generate_and_upload_qr_code
+from src.services.qr_code import get_qr_code_url, generate_qr_code, save_qr_code_url_to_db, upload_qr_code_to_cloudinary, save_qr_code_url_to_db
 
 router = APIRouter(prefix='/images', tags=['images'])
 
@@ -194,44 +194,88 @@ async def get_image(image_id: int, db: Session = Depends(get_db)):
 
     return image_response
 
+
+@router.get("/transformed_image/{image_id}", response_model=ImageResponse)
+async def get_transformed_image(image_id: int, current_user: User = Depends(service_auth.get_current_user), db: Session = Depends(get_db)):
+    """
+    Get transformed image links by the ID of the original image.
+
+    Args:
+        image_id (int): The ID of the original image.
+        db (Session): The database session.
+
+    Returns:
+        List[TransformedImageLink]: List of transformed image links.
+    """
+    # Отримати зображення за його ID
+    image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+    print(image)
+    
+    image_response = ImageResponse.from_db_model(image)
+    print(image_response)
+
+
+    # Отримати трансформовані посилання для цього зображення
+    links = image_response.transformed_links
+
+    return ImageResponse(
+        id=image_response.id,
+        user_id=image_response.user_id,
+        public_id=image_response.public_id,
+        description=image_response.description,
+        transformed_links=links,
+        image_url=image_response.image_url,
+    )
+
+
 @router.post("/remove_object/{image_id}")
 async def remove_object_from_image(
     image_id: int,
-    prompt: str,
-    mode: str = "Star",
+    prompt: str = "Star",
+    current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
+    
+    try:
+        transformed_image = CloudImage.remove_object(image.public_id, prompt)
+        transformation_url = transformed_image['secure_url']
 
-    transformed_image = CloudImage.remove_object(image.public_id, mode, prompt)
-    transformation_url = transformed_image['secure_url']
+        # Check if QR code URL exists in the database
+        qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
 
-    # Check if QR code URL exists in the database
-    qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
+        if qr_code_link:
+            qr_code_url = qr_code_link.qr_code_url
+        else:
+            qr_code_url = None
 
-    if qr_code_link:
-        qr_code_url = qr_code_link.qr_code_url
-    else:
-        qr_code_url = None
+        # Save transformed image information to the database
+        await repository_images.create_transformed_image_link(
+            db=db,
+            image_id=image.id,
+            transformation_url=transformation_url,
+            qr_code_url=qr_code_url,  # You can generate a QR code here if needed
+        )
 
-    # Save transformed image information to the database
-    await repository_images.create_transformed_image_link(
-        db=db,
-        image_id=image.id,
-        transformation_url=transformation_url,
-        qr_code_url=qr_code_url,  # You can generate a QR code here if needed
-    )
+        response_data = {
+            "done": True,
+            "transformation_url": transformation_url,
+            "qr_code_url": qr_code_url,
+        }
 
-    response_data = {
-        "done": True,
-        "transformation_url": transformation_url,
-        "qr_code_url": qr_code_url,
-    }
-
-    return ImageStatusUpdate(**response_data)
+        return ImageStatusUpdate(**response_data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal Server Error: {str(e)}",
+        )
 
 
 @router.post("/apply_rounded_corners/{image_id}")
@@ -239,75 +283,93 @@ async def apply_rounded_corners_to_image(
     image_id: int,
     border: str = "5px_solid_black",
     radius: int = 50,
+    current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     # Fetch the original image URL from the database
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
+    
+    try:
+        transformed_image = CloudImage.apply_rounded_corners(image.public_id, border, radius)
+        transformation_url = transformed_image['secure_url']
 
-    transformed_image = CloudImage.apply_rounded_corners(image.public_id, border, radius)
-    transformation_url = transformed_image['secure_url']
+        # Check if QR code URL exists in the database
+        qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
 
-    # Check if QR code URL exists in the database
-    qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
+        if qr_code_link:
+            qr_code_url = qr_code_link.qr_code_url
+        else:
+            qr_code_url = None
 
-    if qr_code_link:
-        qr_code_url = qr_code_link.qr_code_url
-    else:
-        qr_code_url = None
+        # Save transformed image information to the database
+        await repository_images.create_transformed_image_link(
+            db=db,
+            image_id=image.id,
+            transformation_url=transformation_url,
+            qr_code_url="",  # You can generate a QR code here if needed
+        )
 
-    # Save transformed image information to the database
-    await repository_images.create_transformed_image_link(
-        db=db,
-        image_id=image.id,
-        transformation_url=transformation_url,
-        qr_code_url="",  # You can generate a QR code here if needed
-    )
+        response_data = {
+            "done": True,
+            "transformation_url": transformation_url,
+            "qr_code_url": qr_code_url,
+        }
 
-    response_data = {
-        "done": True,
-        "transformation_url": transformation_url,
-        "qr_code_url": qr_code_url,
-    }
+        return ImageStatusUpdate(**response_data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal Server Error: {str(e)}",
+        )
 
-    return ImageStatusUpdate(**response_data)
-
-    # return {"done": True, "transformation_url": transformation_url, "qr_code_url": None}
 
 @router.post("/improve_photo/{image_id}")
 async def improve_photo(
     image_id: int,
     mode: str = 'outdoot',
     blend: int = 100,
+    current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
+  
+    try:
+        transformed_image = CloudImage.improve_photo(image.image_url, mode, blend)
+        transformation_url = transformed_image['secure_url']
+        print(f"Transformed URL: {transformation_url}")
 
-    transformed_image = CloudImage.improve_photo(image.image_url, mode, blend)
-    transformation_url = transformed_image['secure_url']
-    print(f"Transformed URL: {transformation_url}")
+        # Save transformed image information to the database
+        await repository_images.create_transformed_image_link(
+            db=db,
+            image_id=image.id,
+            transformation_url=transformation_url,
+            qr_code_url="",  # You can generate a QR code here if needed
+        )
 
-    # Save transformed image information to the database
-    await repository_images.create_transformed_image_link(
-        db=db,
-        image_id=image.id,
-        transformation_url=transformation_url,
-        qr_code_url="",  # You can generate a QR code here if needed
-    )
-
-    return {"done": True, "transformation_url": transformation_url, "qr_code_url": None}
+        return {"done": True, "transformation_url": transformation_url, "qr_code_url": None}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal Server Error: {str(e)}",
+        )
 
 
 @router.post("/get_link_qrcode/{image_id}")
 async def get_transformed_image_link_qrcode(
     image_id: int,
+    current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Generate a link for the transformed image and QR code.
+    Get a link from the database.
 
     Args:
         image_id (int): The ID of the original image.
@@ -316,58 +378,93 @@ async def get_transformed_image_link_qrcode(
     Returns:
         dict: The response containing the transformation URL and QR code URL.
     """
-    # Get image from db
-    image = await get_image_by_id(db=db, image_id=image_id)
-    if not image:
-        raise HTTPException(status_code=404, detail="Image not found")
+    try:
+        # Отримати URL та public_id трансформованого зображення
+        image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+        if not image:
+            raise HTTPException(status_code=404, detail="Image not found")
 
-    # Check if a transformed link exists in the database
-    transformed_link = image.transformed_links
-    print(transformed_link)
-    # transformed_link = await get_transformed_image_link(db=db, image_id=image_id)
-    if transformed_link:
-        transformation_url = transformed_link
-    else:
-        # If not found, generate a link for the transformed image
-        prompt = "your_prompt_here"  # Replace with your prompt
-        transformed_image = CloudImage.remove_object(image.public_id, prompt)
-        transformation_url = transformed_image['secure_url']
+        image_response = ImageResponse.from_db_model(image)
 
-    print(transformation_url)
+        # Перевірити, чи список не порожній
+        if not image_response.transformed_links:
+            raise HTTPException(status_code=404, detail="No transformed links found for the image")
 
-    # Generate a QR code for the transformation URL
-    qr_code_data = generate_qr_code(transformation_url)
-    print(qr_code_data)
+        # Отримати перший URL трансформованого зображення
+        selected_transformation_url = image_response.transformed_links[0].qr_code_url if image_response.transformed_links else None
+        url = image_response.transformed_links[0].transformation_url if image_response.transformed_links else None
 
-    # Save QR code URL to db
-    qr_code_url = qr_code_data["url"]
-    await create_transformed_image_link(db=db, image_id=image_id, transformation_url=transformation_url, qr_code_url=qr_code_url)
+        response_data = {
+            "transformation_url": url,
+            "qr_code_url": selected_transformation_url,
+        }
 
-    response_data = {
-        "transformation_url": transformation_url,
-        "qr_code_url": qr_code_url,
-    }
-
-    return response_data
+        return response_data
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal Server Error: {str(e)}",
+        )
 
 
-@router.get("/get_qr_code_url/{image_id}")
-async def get_qr_code_url_for_image(
+@router.post("/make_qr_code/{image_id}")
+async def make_qr_code_url_for_image(
     image_id: int,
+    current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Get QR code URL for a given image ID.
+    Make QR code URL for transformed image by original image ID.
 
     Args:
         image_id (int): The ID of the image.
         db (Session): The database session.
 
     Returns:
-        str: The QR code URL.
+        dict: The QR code URL.
     """
-    qr_code_url = await get_qr_code_url_by_image_id(db=db, image_id=image_id)
-    if not qr_code_url:
-        raise HTTPException(status_code=404, detail="QR code URL not found")
+    try:
+        # Отримати URL та public_id трансформованого зображення
+        image = await repository_images.get_image_by_id(db=db, image_id=image_id)
+        if not image:
+            raise HTTPException(status_code=404, detail="Image not found")
 
-    return {"qr_code_url": qr_code_url}
+        image_response = ImageResponse.from_db_model(image)
+        print(f"image_response:{image_response}")
+
+        # Перевірити, чи список не порожній
+        if not image_response.transformed_links:
+            raise HTTPException(status_code=404, detail="No transformed links found for the image")
+
+        # Отримати перший URL трансформованого зображення
+        selected_transformation_url = image_response.transformed_links[0].transformation_url if image_response.transformed_links else None
+        print(f"selected_transformation_url:{selected_transformation_url}")
+
+        # Генерація QR-коду
+        qr_code = await generate_qr_code(selected_transformation_url)
+
+        publick_id = CloudImage.generate_name_image(email=current_user.email, filename="qr_code")
+        print(f"public_id:{publick_id}")
+
+        # Оновити Cloudinary і зберегти QR-код
+        qr_code_publick_id = await upload_qr_code_to_cloudinary(qr_code, public_id=publick_id)
+        print(f"qr_code_public_id:{qr_code_publick_id}")
+
+        # Оновити посилання на QR-код в базі даних
+        await save_qr_code_url_to_db(
+            db=db,
+            image_id=image_id,
+            transformation_url=selected_transformation_url,
+            qr_code_url=qr_code_publick_id,
+        )
+
+        return {"qr_code_url": qr_code_publick_id}
+
+    except HTTPException as http_exception:
+        raise http_exception
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
