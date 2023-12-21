@@ -1,9 +1,10 @@
 from datetime import datetime
-from email.mime import image
 from typing import List, Optional
-from pydantic import BaseModel, Field, EmailStr
+
+from pydantic import BaseModel, Field
 from fastapi import UploadFile
-from src.database.models import Image, TransformedImageLink
+
+from src.database.models import Image
 
 
 class ImageModel(BaseModel):
@@ -17,6 +18,10 @@ class ImageStatusUpdate(BaseModel):
     done: bool
     transformation_url: Optional[str]
     qr_code_url: Optional[str]
+
+
+class ImageDescriptionUpdate(BaseModel):
+    new_description: str = "new description"
 
 
 class TransformedImageLinkResponse(BaseModel):

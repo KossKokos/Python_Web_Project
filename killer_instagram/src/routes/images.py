@@ -7,18 +7,18 @@ from src.database.db import get_db
 from src.services.auth import service_auth
 from src.repository import images as repository_images
 from src.repository.images import create_transformed_image_link, get_image_by_id
-from src.schemas.images import ImageModel, ImageResponse, ImageStatusUpdate
+from src.schemas import images as schemas_images
 from src.database.models import User, TransformedImageLink
 from src.database.database import db_transaction
 from src.repository.tags import get_existing_tags
 from typing import List
 from src.services.cloudinary import CloudImage
-from src.services.qr_code import get_qr_code_url, generate_qr_code, save_qr_code_url_to_db, upload_qr_code_to_cloudinary, save_qr_code_url_to_db
+from src.services import qr_code as service_qr_code
 
 router = APIRouter(prefix='/images', tags=['images'])
 
 
-@router.post("/", response_model=ImageResponse)
+@router.post("/", response_model=schemas_images.ImageResponse)
 async def upload_image(
     description: str,
     tags: List[str] = Query(..., description="List of tags. Use existing tags or add new ones."),
@@ -112,9 +112,6 @@ async def delete_image(
         # Check if the current user has permission to delete the image
         if image.user_id != current_user.id and not current_user.is_admin:
             raise HTTPException(status_code=403, detail="Permission denied")
-        
-        # Delete image from /images
-        # await repository_images.delete_image_local(db=db, image=image)
 
         # Delete image from Cloudinary
         CloudImage.delete_image(public_id=image.public_id)
@@ -128,8 +125,7 @@ async def delete_image(
 @router.put("/{image_id}")
 async def update_image_description(
     image_id: int,
-    description_update: str,
-    # description_update: str = Body(..., embed=True), # Якщо потрібно передавати JSON
+    body: schemas_images.ImageDescriptionUpdate,
     current_user: User = Depends(service_auth.get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -158,10 +154,10 @@ async def update_image_description(
             raise HTTPException(status_code=403, detail="Permission denied")
 
         # Update image description in the database
-        image = await repository_images.update_image_in_db(db=db, image_id=image_id, new_description=description_update)
+        image = await repository_images.update_image_in_db(db=db, image_id=image_id, new_description=body.new_description)
 
         # Asynchronously update image information on Cloudinary
-        CloudImage.update_image_description_cloudinary(image.public_id, description_update)
+        CloudImage.update_image_description_cloudinary(image.public_id, body.new_description)
 
         return image
     except HTTPException as e:
@@ -173,7 +169,7 @@ async def update_image_description(
         )
 
 
-@router.get("/{image_id}", response_model=ImageResponse)
+@router.get("/{image_id}", response_model=schemas_images.ImageResponse)
 async def get_image(image_id: int, db: Session = Depends(get_db)):
     """
     Get an image by its ID.
@@ -190,12 +186,12 @@ async def get_image(image_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Image not found")
 
     # Assuming that you have a function to convert the database model to the response model
-    image_response = ImageResponse.from_db_model(image)
+    image_response = schemas_images.ImageResponse.from_db_model(image)
 
     return image_response
 
 
-@router.get("/transformed_image/{image_id}", response_model=ImageResponse)
+@router.get("/transformed_image/{image_id}", response_model=schemas_images.ImageResponse)
 async def get_transformed_image(image_id: int, current_user: User = Depends(service_auth.get_current_user), db: Session = Depends(get_db)):
     """
     Get transformed image links by the ID of the original image.
@@ -211,16 +207,13 @@ async def get_transformed_image(image_id: int, current_user: User = Depends(serv
     image = await repository_images.get_image_by_id(db=db, image_id=image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
-    print(image)
     
-    image_response = ImageResponse.from_db_model(image)
-    print(image_response)
-
+    image_response = schemas_images.ImageResponse.from_db_model(image)
 
     # Отримати трансформовані посилання для цього зображення
     links = image_response.transformed_links
 
-    return ImageResponse(
+    return schemas_images.ImageResponse(
         id=image_response.id,
         user_id=image_response.user_id,
         public_id=image_response.public_id,
@@ -230,7 +223,7 @@ async def get_transformed_image(image_id: int, current_user: User = Depends(serv
     )
 
 
-@router.post("/remove_object/{image_id}")
+@router.patch("/remove_object/{image_id}")
 async def remove_object_from_image(
     image_id: int,
     prompt: str = "Star",
@@ -247,7 +240,7 @@ async def remove_object_from_image(
         transformation_url = transformed_image['secure_url']
 
         # Check if QR code URL exists in the database
-        qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
+        qr_code_link = await service_qr_code.get_qr_code_url(db=db, image_id=image.id)
 
         if qr_code_link:
             qr_code_url = qr_code_link.qr_code_url
@@ -268,7 +261,7 @@ async def remove_object_from_image(
             "qr_code_url": qr_code_url,
         }
 
-        return ImageStatusUpdate(**response_data)
+        return schemas_images.ImageStatusUpdate(**response_data)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -296,7 +289,7 @@ async def apply_rounded_corners_to_image(
         transformation_url = transformed_image['secure_url']
 
         # Check if QR code URL exists in the database
-        qr_code_link = await get_qr_code_url(db=db, image_id=image.id)
+        qr_code_link = await service_qr_code.get_qr_code_url(db=db, image_id=image.id)
 
         if qr_code_link:
             qr_code_url = qr_code_link.qr_code_url
@@ -317,7 +310,7 @@ async def apply_rounded_corners_to_image(
             "qr_code_url": qr_code_url,
         }
 
-        return ImageStatusUpdate(**response_data)
+        return schemas_images.ImageStatusUpdate(**response_data)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -327,7 +320,7 @@ async def apply_rounded_corners_to_image(
         )
 
 
-@router.post("/improve_photo/{image_id}")
+@router.put("/improve_photo/{image_id}")
 async def improve_photo(
     image_id: int,
     mode: str = 'outdoot',
@@ -342,7 +335,6 @@ async def improve_photo(
     try:
         transformed_image = CloudImage.improve_photo(image.image_url, mode, blend)
         transformation_url = transformed_image['secure_url']
-        print(f"Transformed URL: {transformation_url}")
 
         # Save transformed image information to the database
         await repository_images.create_transformed_image_link(
@@ -362,7 +354,7 @@ async def improve_photo(
         )
 
 
-@router.post("/get_link_qrcode/{image_id}")
+@router.get("/get_link_qrcode/{image_id}")
 async def get_transformed_image_link_qrcode(
     image_id: int,
     current_user: User = Depends(service_auth.get_current_user),
@@ -384,7 +376,7 @@ async def get_transformed_image_link_qrcode(
         if not image:
             raise HTTPException(status_code=404, detail="Image not found")
 
-        image_response = ImageResponse.from_db_model(image)
+        image_response = schemas_images.ImageResponse.from_db_model(image)
 
         # Перевірити, чи список не порожній
         if not image_response.transformed_links:
@@ -431,8 +423,7 @@ async def make_qr_code_url_for_image(
         if not image:
             raise HTTPException(status_code=404, detail="Image not found")
 
-        image_response = ImageResponse.from_db_model(image)
-        print(f"image_response:{image_response}")
+        image_response = schemas_images.ImageResponse.from_db_model(image)
 
         # Перевірити, чи список не порожній
         if not image_response.transformed_links:
@@ -440,20 +431,17 @@ async def make_qr_code_url_for_image(
 
         # Отримати перший URL трансформованого зображення
         selected_transformation_url = image_response.transformed_links[0].transformation_url if image_response.transformed_links else None
-        print(f"selected_transformation_url:{selected_transformation_url}")
 
         # Генерація QR-коду
-        qr_code = await generate_qr_code(selected_transformation_url)
+        qr_code = await service_qr_code.generate_qr_code(selected_transformation_url)
 
         publick_id = CloudImage.generate_name_image(email=current_user.email, filename="qr_code")
-        print(f"public_id:{publick_id}")
 
         # Оновити Cloudinary і зберегти QR-код
-        qr_code_publick_id = await upload_qr_code_to_cloudinary(qr_code, public_id=publick_id)
-        print(f"qr_code_public_id:{qr_code_publick_id}")
+        qr_code_publick_id = await service_qr_code.upload_qr_code_to_cloudinary(qr_code, public_id=publick_id)
 
         # Оновити посилання на QR-код в базі даних
-        await save_qr_code_url_to_db(
+        await service_qr_code.save_qr_code_url_to_db(
             db=db,
             image_id=image_id,
             transformation_url=selected_transformation_url,
