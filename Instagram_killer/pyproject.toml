@@ -39,6 +39,7 @@ pytest-asyncio = "0.23.2"
 pytest-trio = "0.8.0"
 qrcode = {version = "7.4.2", extras = ["pil"]}
 psycopg2-binary = "2.9.9"
+psycopg2 = "2.9.5"
 
 
 [tool.poetry.group.dev.dependencies]
