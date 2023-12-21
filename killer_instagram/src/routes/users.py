@@ -203,7 +203,7 @@ async def update_unbanned_status(user_id:str,
 
 @router.delete('/{user_id}',
                status_code=status.HTTP_200_OK,
-               dependencies=[Depends(logout_dependency), 
+               dependencies=[Depends(service_logout.logout_dependency), 
                              Depends(allowd_operation_by_admin)])
 async def delete_user(user_id: int, current_user: User = Depends(service_auth.get_current_user),
                       db: Session = Depends(get_db)):
