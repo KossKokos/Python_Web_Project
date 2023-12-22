@@ -71,6 +71,17 @@ and a 500 status code otherwise.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="main.routes">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">routes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">BaseRoute</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#main.routes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide a list of static routes to add when initializing app</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of routes</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-src.database.db">
 <span id="instagram-killer-database-db"></span><h1>INSTAGRAM KILLER database DB<a class="headerlink" href="#module-src.database.db" title="Permalink to this heading">¶</a></h1>
@@ -1931,7 +1942,7 @@ This function returns a JSON object containing the new average rating.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>user_id</strong> – int: <cite>ID</cite> of the user to be deleted</p></li>
+<li><p><strong>user_id</strong> – int: ID of the user to be deleted</p></li>
 <li><p><strong>current_user</strong> – User: Get the current user from the database</p></li>
 <li><p><strong>db</strong> – Session: Database session</p></li>
 </ul>
@@ -2716,6 +2727,7 @@ public_id (str): The public ID for the Cloudinary upload.</p>
 <li><a class="reference internal" href="#module-main">INSTAGRAM KILLER main</a><ul>
 <li><a class="reference internal" href="#main.healthchecker"><code class="docutils literal notranslate"><span class="pre">healthchecker()</span></code></a></li>
 <li><a class="reference internal" href="#main.read_root"><code class="docutils literal notranslate"><span class="pre">read_root()</span></code></a></li>
+<li><a class="reference internal" href="#main.routes"><code class="docutils literal notranslate"><span class="pre">routes()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.database.db">INSTAGRAM KILLER database DB</a><ul>
