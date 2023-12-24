@@ -6,7 +6,7 @@ authors = ["KossKokos <koskokos0@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.10"
+python = "3.10.0"
 alembic = "1.10.2"
 babel = "2.13.0"
 bcrypt = "4.0.1"
