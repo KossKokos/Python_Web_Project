@@ -1,5 +1,5 @@
-# Застосунок Instagram Killer (Team 4)
-# [url:](https://instagram-killer-algorithmic.koyeb.app)
+# Застосунок [Instagram Killer](https://instagram-killer-algorithmic.koyeb.app) (Team 4)
+
 Застосунок "Instagram Killer" - інноваційна платформа для сбереження та обробки світлин з безпечною аутентифікацією через JWT токени та різними ролями для користувачів.
 
 
