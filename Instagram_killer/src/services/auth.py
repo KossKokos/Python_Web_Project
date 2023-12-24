@@ -9,10 +9,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-
-from src.repository import users as repository_auth
-from src.database.db import get_db
-from src.conf.config import settings
+from ..repository import users as repository_auth
+from ..database.db import get_db
+from ..conf.config import settings
 
 
 class Auth:

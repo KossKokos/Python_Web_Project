@@ -5,9 +5,9 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text 
 
-from src.routes import auth, users, images, rating, comments
+from Instagram_killer.src.routes import auth, users, images, rating, comments
 
-from src.database.db import get_db
+from Instagram_killer.src.database.db import get_db
 
 
 app = FastAPI(debug=True)

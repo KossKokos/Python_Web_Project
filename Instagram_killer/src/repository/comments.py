@@ -2,8 +2,8 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from src.database.models import Comment
-from src.schemas import comments as schema_comments
+from ..database.models import Comment
+from ..schemas import comments as schema_comments
 
 
 async def add_new_comment(body: schema_comments.CommentModel, user_id: int, db: Session) -> Comment:

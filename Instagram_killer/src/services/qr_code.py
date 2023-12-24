@@ -5,8 +5,8 @@ from io import BytesIO
 from sqlalchemy.orm import Session
 from cloudinary.uploader import upload
 
-from src.database.models import TransformedImageLink
-from src.schemas.images import ImageStatusUpdate
+from ..database.models import TransformedImageLink
+from ..schemas.images import ImageStatusUpdate
 
 
 async def get_qr_code_url(db: Session, image_id: int) -> str:

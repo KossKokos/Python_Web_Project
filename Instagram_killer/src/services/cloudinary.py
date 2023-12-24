@@ -8,7 +8,7 @@ from cloudinary import CloudinaryImage
 from cloudinary import uploader
 from cloudinary.utils import cloudinary_url
 
-from src.conf.config import settings
+from ..conf.config import settings
 
 
 class CloudImage:

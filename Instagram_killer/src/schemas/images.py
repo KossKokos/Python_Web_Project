@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from fastapi import UploadFile
 
-from src.database.models import Image
+from ..database.models import Image
 
 
 class ImageModel(BaseModel):

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.database.models import BlacklistedToken 
+from ..database.models import BlacklistedToken 
 
 
 async def token_to_blacklist(access_token: str, user_id, db: Session):

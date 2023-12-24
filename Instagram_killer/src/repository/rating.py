@@ -1,8 +1,8 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.database.models import Image, Rating
-from src.schemas.images import ImageResponse
+from ..database.models import Image, Rating
+from ..schemas.images import ImageResponse
 
 
 async def creare_rating(image_id: int, user_id: int, rating: int, db: Session) -> Rating:

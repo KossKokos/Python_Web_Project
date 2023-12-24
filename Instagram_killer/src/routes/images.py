@@ -3,18 +3,18 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
-from src.database.db import get_db, db_transaction
-from src.schemas import images as schemas_images
-from src.database.models import User, Image
-from src.services.auth import service_auth
-from src.services import (
+from ..database.db import get_db, db_transaction
+from ..schemas import images as schemas_images
+from ..database.models import User, Image
+from ..services.auth import service_auth
+from ..services import (
     roles as service_roles,
     logout as service_logout,
     banned as service_banned,
     qr_code as service_qr_code,
     cloudinary as service_cloudinary
 )
-from src.repository import (
+from ..repository import (
     images as repository_images, 
     rating as repository_rating, 
     tags as repository_tags

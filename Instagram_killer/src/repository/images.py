@@ -3,9 +3,9 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.database.models import Image,  TransformedImageLink, User, image_m2m_tag
-from src.repository import tags as repository_tags
-from src.schemas.images import ImageResponse, ImageStatusUpdate
+from ..database.models import Image,  TransformedImageLink, User, image_m2m_tag
+from ..repository import tags as repository_tags
+from ..schemas.images import ImageResponse, ImageStatusUpdate
 
 
 async def add_tag_to_image(db: Session, image_id: int, tag_id: int):

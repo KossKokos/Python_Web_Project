@@ -2,8 +2,8 @@ from typing import List
 
 from fastapi import Depends, HTTPException, status, Request
 
-from src.database.models import User
-from src.services.auth import service_auth
+from ..database.models import User
+from ..services.auth import service_auth
 
 class RoleRights:
     def __init__(self, allowed_roles: List[str]):

@@ -2,18 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, status, Security, Backgro
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from src.database.db import get_db
-from src.database.models import User
-from src.repository import users as repository_users
-from src.repository.logout import token_to_blacklist
-from src.services.auth import service_auth
-from src.services import (
+from ..database.db import get_db
+from ..database.models import User
+from ..repository import users as repository_users
+from ..repository.logout import token_to_blacklist
+from ..services.auth import service_auth
+from ..services import (
     email as service_email,
     roles as service_roles,
     banned as service_banned,
     logout as service_logout
 )
-from src.schemas import (
+from ..schemas import (
     users as schema_users,
     token as schema_token,
     email as schema_email,

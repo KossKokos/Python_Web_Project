@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from src.database.models import Rating
+from ..database.models import Rating
 
 
 class RatingModel(BaseModel):

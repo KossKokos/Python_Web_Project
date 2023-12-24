@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from src.database.db import get_db
-from src.database.models import User
-from src.repository import users as repository_users
-from src.services.auth import service_auth
-from src.schemas.users import UserResponce
-from src.services import (
+from ..database.db import get_db
+from ..database.models import User
+from ..repository import users as repository_users
+from ..services.auth import service_auth
+from ..schemas.users import UserResponce
+from ..services import (
     roles as service_roles,
     logout as service_logout,
     banned as service_banned,

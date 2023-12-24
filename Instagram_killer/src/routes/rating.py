@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.database.db import get_db
-from src.services.auth import service_auth
-from src.repository import images as repository_images
-from src.database.models import User, Image, Rating
-from src.services.roles import RoleRights
-from src.services.logout import logout_dependency
-from src.services.banned import banned_dependency
-from src.schemas import rating as schema_rating
-from src.repository import rating as repository_rating
+from ..database.db import get_db
+from ..services.auth import service_auth
+from ..repository import images as repository_images
+from ..database.models import User, Image, Rating
+from ..services.roles import RoleRights
+from ..services.logout import logout_dependency
+from ..services.banned import banned_dependency
+from ..schemas import rating as schema_rating
+from ..repository import rating as repository_rating
 
 router = APIRouter(prefix='/images/rating', tags=['rating'])
 

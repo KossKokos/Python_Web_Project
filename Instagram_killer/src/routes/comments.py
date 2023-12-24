@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.database.models import User, Comment, Image
-from src.services.auth import service_auth
-from src.database.db import get_db
-from src.repository import comments as repository_comments, images as repository_images
-from src.schemas import comments as schema_comments
-from src.services.roles import RoleRights
-from src.services.logout import logout_dependency
+from ..database.models import User, Comment, Image
+from ..services.auth import service_auth
+from ..database.db import get_db
+from ..repository import comments as repository_comments, images as repository_images
+from ..schemas import comments as schema_comments
+from ..services.roles import RoleRights
+from ..services.logout import logout_dependency
 
 router = APIRouter(prefix='/images/comments', tags=['comments'])
 
