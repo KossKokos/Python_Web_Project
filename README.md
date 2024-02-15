@@ -1,91 +1,65 @@
-# Застосунок [Instagram Killer](https://instagram-killer-algorithmic.koyeb.app) (Team 4)
+# [Instagram Killer](https://instagram-killer-algorithmic.koyeb.app) (Team 4)
 
-Застосунок "Instagram Killer" - інноваційна платформа для сбереження та обробки світлин з безпечною аутентифікацією через JWT токени та різними ролями для користувачів.
+## Overview
 
+**Instagram Killer** is a feature-rich REST API built using the FastAPI framework. The application serves as a platform for users to share, manage, and interact with photos. It emphasizes robust authentication, image manipulation, commenting, and additional functionalities to enhance user experience.
 
 
 ![Logo](https://github.com/KossKokos/Python_Web_Project/blob/main/Instagram_killer/logo/image.png)
 
 
+## Key Features
 
-## Зміст
-- [Особливості](#особливості)
-- [Залежності](#залежності)
-- [Опис](#опис)
-- [Налаштування та запуск API](#налаштування_та_запуск_API)
-- [Документація](#документація)
-- [Ліцензія](#ліцензія)
+### Authentication
+- Implements a JWT token-based authentication system.
+- Users are categorized into three roles: regular user, moderator, and administrator. The first user is always an administrator.
+- Utilizes FastAPI decorators to enforce different levels of access (user, moderator, administrator).
 
-## Особливості
-- Завантажуйте, редагуйте та видаляйте світлини
-- Додавайте теги та отримуйте унікальні QR-коди для трансформованих зображень
-- Надавайте коментарі, відкривайте свої профілі та здійснюйте пошук за ключовими словами та тегами
-- Рейтинг та можливість модерування роблять цю платформу ідеальним місцем для спільного обміну фотографіями та взаємодії.
+### Photo Management
+- Users can upload photos with descriptions (POST).
+- Photos can be deleted (DELETE), edited (PUT), and accessed by a unique link (GET).
+- Allows adding up to 5 tags per photo. Tags are unique across the application.
+- Basic image operations are available using Cloudinary's transformation capabilities.
 
-## Залежності
-  * python==3.10
-  * alembic==1.10.2
-  * babel==2.13.0
-  * bcrypt==4.0.1
-  * cloudinary==1.32.0
-  * colorama==0.4.6
-  * cryptography==41.0.5
-  * docutils==0.19
-  * fastapi==0.95.0
-  * email-validator==1.3.1
-  * fastapi-limiter==0.1.5
-  * fastapi-mail==1.2.7
-  * httpx==0.25.2
-  * jinja2==3.1.2
-  * passlib==1.7.4
-  * psycopg2==2.9.5
-  * pydantic==1.10.7
-  * pytest==7.4.3
-  * pytest-mock==3.12.0
-  * python-dotenv==1.0.0
-  * python-jose==3.3.0
-  * python-multipart==0.0.6
-  * redis==4.5.4
-  * requests==2.31.0
-  * sniffio==1.3.0
-  * sphinx==6.1.3
-  * sqlalchemy==2.0.7
-  * starlette==0.26.1
-  * urllib3==1.26.18
-  * uvicorn==0.21.1
-  * pytest-asyncio==0.23.2
-  * pytest-trio==0.8.0
-  * qrcode==7.4.2
+### Commenting
+- Each photo has a comment section where users can add comments.
+- Users can edit their comments but cannot delete them.
+- Moderators and administrators have the ability to delete comments.
+- Comments include creation and update timestamps.
 
-## Опис
+### Additional Functionality
 
-В папці src знаходиться вся робоча система:
-  -  У src\database знаходиться файл db.py, де підключено базу даних Postgresql, Щоб під'єднати власну db, потрібно ввести дані з вашої db у файл .env, що знаходиться у головній директорії проекту. 
-  -  У src\models знаходяться моделі таблиць, які ви створюєте і мігруєте їх в базу даних, тільки в цьому файлі.
-  -  У src\repository знаходяться crud фунції, кожен файл відповідальних за операції над певним об'єктом, наприклад в users.py тільки crud функції для юзерів і т.д. Нові crud операцї для нового об'єкта - новий файл.
-  -  У src\routes знаходяться файли для створення шляхів, наприклад в auth.py будуть api/auth/login, api/auth/signup, api/auth/request_email і так далі, в users.py будуть шляхи які починаються з api/users/ і так для кожних нових шляхів - новий файл.
-  -  у src\schemas знаходяться файли в яких моделі для видачі інформації, прийому від користувачів. Ви можете добавляти скільки завгодно моделів та файлів. 
-  -  У src\services знаходяться файли: auth.py та email.py, в яких знаходяться класи для виконання операцій по аутентифікації, авторизації і надсилання емейл для підтвердження користувача або скидання паролю. Ви можете добаляти нові сервери, наприклад для роботи з cloudinaryю
-  -  У src\templates знахоться темплейти для надсилання емейлів про підтвердження та зміни паролю.
+#### User Profile
+- Includes a route to view a user's profile based on their unique username.
+- Provides information such as name, registration date, and the number of uploaded photos.
+- Users can edit their information, and different routes cater to viewing and editing profiles.
 
+#### User Management
+- Administrators can deactivate users (ban them). Inactive users cannot log in.
 
-## Налаштування та запуск API 
-- Важливо!!! Усі скоманди для запуску застосунку повинні виконуватись у теці Instagram_killer. Для цього у терміналі необхідно виконати команду "cd Instagram_killer".
+#### Logout Mechanism
+- Implements a mechanism to log out users, adding their access tokens to a blacklist.
 
-- Створить віртуальне оточення використовуючи Poetry за допомогою команди "poetry install --no-root".
+#### Rating System
+- Users can rate photos from 1 to 5 stars.
+- Ratings are averaged to calculate the overall rating of a photo.
+- Users can rate a photo only once, and they cannot rate their own photos.
+- Moderators and administrators can view and delete user ratings.
 
-- Активуйте оточення командою "poetry sell"
+#### Search and Filtering
+- Users can search for photos based on keywords or tags.
+- Filter search results by rating or upload date.
+- Moderators and administrators can search and filter users who have uploaded photos.
 
-- Файл .example.env є прикладом, які дані потрібно записувати. Для того, щоб запустити API, потрібно перейменувати його в .env та ввести свої дані.
+### Testing and Deployment
 
-- Файл docker-compose потрібен для запуску відразу двох баз даних: postgres та redis. Це полегшує роботу та збільшує продуктивність. Щоб запустити  його, введіть в консолі команду "docker-compose up" або "docker-compose up -d", для того, щоб не бачити логування. Щоб зупинити, введіть в консолі команду "docker-compose down".
+- Achieves test coverage of over 90% through modular testing.
+- Deploys the application to a cloud service, such as Koyeb or Fly.io, for accessibility.
 
-- Для запуску сервера потрібно виконати команду python main.py
+## Project Structure
 
-## Документація
+The project follows a structured organization with directories for database, models, repository, routes, schemas, services, and templates. The codebase leverages PostgreSQL for data storage, SQLAlchemy for database interaction, and FastAPI for building the REST API. Additionally, the project includes detailed documentation with Swagger for ease of use.
 
-http://localhost:8000/docs
+**Note:** The project is hosted on a public repository (GitHub, GitLab, or BitBucket) and serves as a valuable addition to the developer's portfolio. Expansion of functionality is encouraged, and any enhancements should be discussed with the mentor to align with project goals.
 
-## Ліцензія
-
-Цей проект підпадає під дію MIT лицензіЇ.
+*This application showcases proficiency in FastAPI, database interaction with PostgreSQL, and comprehensive testing and deployment strategies.*
